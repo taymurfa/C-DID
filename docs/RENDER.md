@@ -2,12 +2,12 @@
 
 Blueprint file: [`render.yaml`](../render.yaml) (repo root).
 
-Creates four Docker web services on branch **`Jobersteadt`**:
+Creates four Docker web services from branch **`main`**:
 
 | Service | Package | Plan |
 | --- | --- | --- |
-| `gridconnects` | `speaker-signal/` (Signal Desk) | free |
-| `gridconnects-ingestion` | `speaker-signal-ingestion/` | **starter** (Playwright image) |
+| `gridconnects` | `frontend/` (landing + unified Map / Signal product) | free |
+| `gridconnects-ingestion` | `speaker-signal-ingestion/` | free |
 | `gridconnects-intelligence` | `intelligence-service/` | free |
 | `gridconnects-gtm` | `gtm-service/` | free |
 
@@ -15,12 +15,12 @@ Agents bind `0.0.0.0:$PORT` (Render injects `PORT`). Local Compose still sets `I
 
 ## 1. Push the Blueprint
 
-Commit and push `render.yaml` (and related changes) to `Jobersteadt` on GitHub (`taymurfa/C-DID`).
+Commit and push `render.yaml` (and related changes) to `main` on GitHub (`taymurfa/C-DID`).
 
 ## 2. Create / sync the Blueprint in Render
 
 1. Open [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint** (or open the existing Blueprint and **Manual Sync**).
-2. Connect the `taymurfa/C-DID` repo and select branch **`Jobersteadt`**.
+2. Connect the `taymurfa/C-DID` repo and select branch **`main`**.
 3. Confirm it finds root `render.yaml`, then apply.
 
 ## 3. Fill secrets (`sync: false`)
@@ -59,7 +59,7 @@ Exact hostnames appear on each service’s Render page (`*.onrender.com`).
 ## Notes
 
 - Free services **spin down** when idle; first request can take 30–60s.
-- Ingestion uses the Playwright base image — if the build OOMs on free, keep **`starter`** (as in the Blueprint).
+- Ingestion uses the Playwright base image. If the build exceeds free-tier memory, move that service to **Starter**.
 - Do not commit real secrets into `render.yaml`.
 - If you previously deployed `speaker-signal-*` services, syncing this Blueprint creates the new `gridconnects*` services; you can delete the old ones after cutover.
 - **Email:** Render GTM is locked to `SEND_MODE=mock` (draft only — no automatic sending). Local demo with `SEND_MODE=real` can use **Send demo to team**, which always delivers to `TEST_TO_EMAIL`, never the lead.
