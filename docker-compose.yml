@@ -1,64 +1,136 @@
+# Speaker Signal demo stack — MongoDB Atlas only (no local Postgres/Mongo).
+# Requires MONGODB_URI (and optional OPENAI_API_KEY) in root .env.
+# Usage: docker compose up --build
+#
+# Dashboard  http://localhost:3000
+# Ingestion  http://localhost:8001
+# Intelligence http://localhost:8002
+# GTM        http://localhost:8003  (Zoho SMTP via root .env SEND_MODE/SMTP_*)
+#
+# Note: `gtm` builds from ./gtm-service (Node/Fastify). Do not point this
+# service at agents/agent3 — that Python stack is separate.
+
 services:
-  frontend:
+  ingestion:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
+      context: ./speaker-signal-ingestion
+    image: speaker-signal-ingestion
+    container_name: speaker-signal-ingestion
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    environment:
+      INGESTION_PORT: "8001"
+      HOST: "0.0.0.0"
+      MONGODB_DB: speaker_signal_ingestion
+      BOOTSTRAP_SEEDS: "https://www.7x24exchange.org/,https://www.datacenterworld.com/,https://infrastructuremasons.org/events/"
+      BOOTSTRAP_MAX_PER_SEED: "10"
+      AUTO_INGEST_ENABLED: "true"
+      AUTO_INGEST_CONCURRENCY: "3"
+      HANDOFF_ENABLED: "true"
+      INTELLIGENCE_URL: "http://intelligence:8002"
+    depends_on:
+      intelligence:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "fetch('http://localhost:8001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  intelligence:
+    build:
+      context: ./intelligence-service
+    image: intelligence-service
+    container_name: intelligence-service
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env
+    environment:
+      INTELLIGENCE_PORT: "8002"
+      HOST: "0.0.0.0"
+      MONGODB_DB: speaker_signal_intelligence
+      INGESTION_URL: "http://ingestion:8001"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "fetch('http://localhost:8002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  gtm:
+    build:
+      context: ./gtm-service
+    image: gtm-service
+    container_name: gtm-service
+    ports:
+      - "8003:8003"
+    env_file:
+      - .env
+    environment:
+      GTM_PORT: "8003"
+      HOST: "0.0.0.0"
+      MONGODB_DB: speaker_signal_gtm
+      # Zoho SMTP — interpolated from root .env (keep SMTP_PASSWORD quoted there if it contains #)
+      SEND_MODE: ${SEND_MODE:-mock}
+      SENDER_NAME: ${SENDER_NAME:-Kirill Cheldishkin}
+      SENDER_COMPANY: ${SENDER_COMPANY:-Candid}
+      SENDER_EMAIL: ${SENDER_EMAIL:-info@jobersteadt.com}
+      TEST_TO_EMAIL: ${TEST_TO_EMAIL:-kirill.cheldishkin2105@gmail.com}
+      SMTP_HOST: ${SMTP_HOST:-smtp.zoho.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-info@jobersteadt.com}
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "fetch('http://localhost:8003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  dashboard:
+    build:
+      context: ./speaker-signal
+      args:
+        NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-true}
+    image: speaker-signal-dashboard
+    container_name: speaker-signal-dashboard
     ports:
       - "3000:3000"
     env_file:
-      - ./frontend/.env.local
+      - .env
     environment:
-      # Browser calls Flask on host :5001 (published port). Route handlers use BACKEND_URL inside Docker network.
-      - NEXT_PUBLIC_API_URL=http://localhost:5001
-      - BACKEND_URL=http://backend:5001
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
+      HOSTNAME: "0.0.0.0"
+      PORT: "3000"
+      INGESTION_API_URL: "http://ingestion:8001"
+      INTELLIGENCE_API_URL: "http://intelligence:8002"
+      GTM_API_URL: "http://gtm:8003"
+      INGESTION_URL: "http://ingestion:8001"
+      NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-true}
     depends_on:
-      - backend
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "5001:5001"
-    env_file:
-      - ./backend/.env
-    environment:
-      # Compose network: DB host is the postgres service name, not localhost
-      - DATABASE_URL=postgresql+psycopg://postgres:postgres@postgres:5432/okr
-      - OKR_REPOSITORY=postgres
-      # Comma-separated Auth0 subs (e.g. auth0|abc) that always get admin (User management, etc.)
-      - APP_ADMIN_USER_IDS=${APP_ADMIN_USER_IDS:-}
-      # Comma-separated emails: admin on first login without pre-creating Mongo / knowing sub
-      - APP_ADMIN_EMAILS=${APP_ADMIN_EMAILS:-}
-      - APP_ORG_OWNER_EMAILS=${APP_ORG_OWNER_EMAILS:-}
-      - APP_DEFAULT_ORG_NAME=${APP_DEFAULT_ORG_NAME:-}
-    volumes:
-      - ./backend:/app
+      ingestion:
+        condition: service_started
+      intelligence:
+        condition: service_started
+      gtm:
+        condition: service_started
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  postgres:
-    image: postgres:16
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_DB=${POSTGRES_DB:-okr}
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
-      interval: 3s
-      timeout: 5s
-      retries: 15
-      start_period: 5s
-
-volumes:
-  pgdata:

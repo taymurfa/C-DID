@@ -1,0 +1,33 @@
+{
+  "name": "speaker-signal",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "lucide-react": "^0.487.0",
+    "next": "16.1.6",
+    "openai": "^4.77.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "typescript": "^5",
+    "vitest": "^2.1.8"
+  }
+}

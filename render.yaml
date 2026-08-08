@@ -1,93 +1,142 @@
-# Render Blueprint: https://render.com/docs/infrastructure-as-code
-# Deploy: New → Blueprint → connect repo → apply this file.
+# Speaker Signal — Render Blueprint
+# Dashboard + Agent 1 (ingestion) + Agent 2 (intelligence) + Agent 3 (GTM)
 #
-# Free tier: Web Services + PostgreSQL (limits apply; services may spin down when idle).
-# Set secrets in the Render dashboard — do not commit .env.
+# Connect: Render → New → Blueprint → this repo / branch Jobersteadt
+# Docs: docs/RENDER.md
 #
-# Cross-links (same blueprint): BACKEND_URL on frontend + FRONTEND_URL on backend use
-# each service’s RENDER_EXTERNAL_URL. Auth0 callback URLs still must be set in Auth0 once URLs exist.
-# Env reference: docs/RENDER_ENV.md
-
-version: "1"
-
-databases:
-  - name: okr-postgres
-    databaseName: okr
-    user: okr
-    plan: free
-    region: oregon
+# Secrets use sync: false — set them once in the Render dashboard after create.
+# Render injects env vars as Docker build args (needed for NEXT_PUBLIC_*).
 
 services:
+  # --- Agent 2: Intelligence (qualify / score) ---------------------------------
   - type: web
-    name: okr-backend
+    name: speaker-signal-intelligence
     runtime: docker
     plan: free
-    region: oregon
-    branch: main
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    healthCheckPath: /live
+    branch: Jobersteadt
+    dockerfilePath: ./intelligence-service/Dockerfile
+    dockerContext: ./intelligence-service
+    healthCheckPath: /health
     envVars:
-      - key: FLASK_ENV
-        value: production
-      - key: OKR_REPOSITORY
-        value: postgres
-      - key: DATABASE_URL
-        fromDatabase:
-          name: okr-postgres
-          property: connectionString
-      - key: FLASK_SECRET_KEY
-        generateValue: true
-      # Auto: public URL of okr-frontend (CORS + OAuth redirect to dashboard).
-      - key: FRONTEND_URL
-        fromService:
-          name: okr-frontend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
-      # --- Set in dashboard (see docs/RENDER_ENV.md) ---
+      - key: HOST
+        value: "0.0.0.0"
+      - key: MONGODB_DB
+        value: speaker_signal_intelligence
       - key: MONGODB_URI
         sync: false
-      - key: MONGODB_DB_NAME
+      - key: OPENAI_API_KEY
         sync: false
-      - key: APP_ADMIN_USER_IDS
-        sync: false
-      - key: APP_ADMIN_EMAILS
-        sync: false
-      - key: APP_ORG_OWNER_EMAILS
-        sync: false
-      - key: APP_DEFAULT_ORG_NAME
-        sync: false
-      # Required in production — do not set ALLOW_INSECURE_AUTH0_DEV on Render.
-      - key: AUTH0_ISSUER_BASE_URL
-        sync: false
-      - key: AUTH0_CLIENT_ID
-        sync: false
-      - key: AUTH0_CLIENT_SECRET
-        sync: false
-      - key: AUTH0_AUDIENCE
-        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
 
+  # --- Agent 1: Ingestion (Playwright — needs more than free-tier disk/RAM) ----
   - type: web
-    name: okr-frontend
+    name: speaker-signal-ingestion
     runtime: docker
-    plan: free
-    region: oregon
-    branch: main
-    dockerfilePath: ./frontend/Dockerfile
-    dockerContext: ./frontend
-    healthCheckPath: /
+    plan: starter
+    branch: Jobersteadt
+    dockerfilePath: ./speaker-signal-ingestion/Dockerfile
+    dockerContext: ./speaker-signal-ingestion
+    healthCheckPath: /health
     envVars:
-      - key: NODE_ENV
-        value: production
-      # Auto: public URL of okr-backend (Next rewrites /api → Flask).
-      - key: BACKEND_URL
+      - key: HOST
+        value: "0.0.0.0"
+      - key: MONGODB_DB
+        value: speaker_signal_ingestion
+      - key: AUTO_INGEST_ENABLED
+        value: "true"
+      - key: HANDOFF_ENABLED
+        value: "true"
+      - key: MONGODB_URI
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: INTELLIGENCE_URL
         fromService:
-          name: okr-backend
+          name: speaker-signal-intelligence
           type: web
           envVarKey: RENDER_EXTERNAL_URL
-      # Browser API base (Flask session cookie). Same as BACKEND_URL; layout injects at runtime (build may lack NEXT_PUBLIC_*).
-      - key: NEXT_PUBLIC_API_URL
+
+  # --- Agent 3: GTM (sequences + Zoho SMTP) ------------------------------------
+  - type: web
+    name: speaker-signal-gtm
+    runtime: docker
+    plan: free
+    branch: Jobersteadt
+    dockerfilePath: ./gtm-service/Dockerfile
+    dockerContext: ./gtm-service
+    healthCheckPath: /health
+    envVars:
+      - key: HOST
+        value: "0.0.0.0"
+      - key: MONGODB_DB
+        value: speaker_signal_gtm
+      - key: MONGODB_URI
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: SEND_MODE
+        sync: false
+      - key: SENDER_NAME
+        value: Kirill Cheldishkin
+      - key: SENDER_COMPANY
+        value: Candid
+      - key: SENDER_EMAIL
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.zoho.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: TEST_TO_EMAIL
+        value: kirill.cheldishkin2105@gmail.com
+
+  # --- Dashboard (Signal Desk) ------------------------------------------------
+  - type: web
+    name: speaker-signal-dashboard
+    runtime: docker
+    plan: free
+    branch: Jobersteadt
+    dockerfilePath: ./speaker-signal/Dockerfile
+    dockerContext: ./speaker-signal
+    healthCheckPath: /
+    envVars:
+      - key: HOSTNAME
+        value: "0.0.0.0"
+      - key: NEXT_PUBLIC_DEMO_MODE
+        value: "false"
+      - key: MONGODB_URI
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: FIRECRAWL_API_KEY
+        sync: false
+      - key: INGESTION_API_URL
         fromService:
-          name: okr-backend
+          name: speaker-signal-ingestion
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: INGESTION_URL
+        fromService:
+          name: speaker-signal-ingestion
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: INTELLIGENCE_API_URL
+        fromService:
+          name: speaker-signal-intelligence
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: GTM_API_URL
+        fromService:
+          name: speaker-signal-gtm
           type: web
           envVarKey: RENDER_EXTERNAL_URL

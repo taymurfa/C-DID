@@ -3,6 +3,7 @@
 import { Map, Radio } from "lucide-react";
 import { useState } from "react";
 import { SignalDesk } from "@/components/SignalDesk";
+import "./signal-desk.css";
 
 type View = "map" | "signals";
 
@@ -35,7 +36,11 @@ export default function Home() {
       </div>
 
       {view === "map" ? (
-        <iframe className="atlas-frame" src="/ercot-atlas.html" title="ERCOT Power Project Atlas" />
+        <iframe
+          className="atlas-frame"
+          src="/ercot-atlas.html"
+          title="ERCOT Power Project Atlas"
+        />
       ) : (
         <SignalDesk />
       )}

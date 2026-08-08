@@ -1,0 +1,278 @@
+{
+  "qualificationId": "00000000-0000-0000-0000-000000000000",
+  "sourceRunId": "3f1c8b90-7d2a-4c6e-9b1a-2f5e6d8a4c11",
+  "conferenceName": "DevReach 2026",
+  "totals": {
+    "speakersIn": 5,
+    "afterDedup": 5,
+    "eligible": 5,
+    "qualified": 5,
+    "companies": 5
+  },
+  "icpEnrichment": "deterministic",
+  "leads": [
+    {
+      "leadId": "lead-01",
+      "name": "John Smith",
+      "originalName": "John Smith",
+      "title": "VP of Engineering",
+      "company": "DataForge",
+      "companyKey": "dataforge",
+      "role": "speaker",
+      "seniority": "vp",
+      "topics": [
+        "data centers",
+        "infrastructure"
+      ],
+      "sessionTitles": [
+        "Scaling Data Pipelines to Billions of Events"
+      ],
+      "sourceUrls": [
+        "https://example-conf.com/speakers"
+      ],
+      "scores": {
+        "total": 82.5,
+        "roleFit": 1,
+        "companyIcpFit": 0.55,
+        "seniority": 0.85,
+        "topicRelevance": 1,
+        "buyingInfluence": 0.85,
+        "confidence": 0.94
+      },
+      "tier": "A",
+      "qualified": true,
+      "whyThisPersonMatters": "John Smith is VP of Engineering at DataForge. VP / Head of (senior decision maker), so buying influence reads as 85%. Company/role signals align with our ICP (infrastructure, engineering). Speaks on ICP-relevant topics: data centers, infrastructure. Overall lead score 83/100.",
+      "evidence": [
+        "Title: VP of Engineering",
+        "Company: DataForge",
+        "Role on site: speaker",
+        "Sessions: Scaling Data Pipelines to Billions of Events",
+        "ICP topics: data centers, infrastructure",
+        "ICP keywords: infrastructure, engineering",
+        "Source: https://example-conf.com/speakers"
+      ],
+      "icpSource": "deterministic",
+      "mergedSourceIds": [
+        "sp-john-smith"
+      ]
+    },
+    {
+      "leadId": "lead-02",
+      "name": "Sofia Rossi",
+      "originalName": "Sofia Rossi",
+      "title": "CTO",
+      "company": "NimbusCloud",
+      "companyKey": "nimbuscloud",
+      "role": "speaker",
+      "seniority": "c_level",
+      "topics": [
+        "infrastructure"
+      ],
+      "sessionTitles": [
+        "Opening Keynote: The Future of Developer Platforms"
+      ],
+      "sourceUrls": [
+        "https://example-conf.com/speakers"
+      ],
+      "scores": {
+        "total": 82.4,
+        "roleFit": 1,
+        "companyIcpFit": 0.45,
+        "seniority": 1,
+        "topicRelevance": 0.8333333333333334,
+        "buyingInfluence": 1,
+        "confidence": 0.9
+      },
+      "tier": "A",
+      "qualified": true,
+      "whyThisPersonMatters": "Sofia Rossi is CTO at NimbusCloud. C-level / founder (economic buyer), so buying influence reads as 100%. Company/role signals align with our ICP (developer). Speaks on ICP-relevant topics: infrastructure, ai. Overall lead score 82/100.",
+      "evidence": [
+        "Title: CTO",
+        "Company: NimbusCloud",
+        "Role on site: speaker",
+        "Sessions: Opening Keynote: The Future of Developer Platforms",
+        "ICP topics: infrastructure, ai",
+        "ICP keywords: developer",
+        "Source: https://example-conf.com/speakers"
+      ],
+      "icpSource": "deterministic",
+      "mergedSourceIds": [
+        "sp-sofia-rossi"
+      ]
+    },
+    {
+      "leadId": "lead-03",
+      "name": "Jane Doe",
+      "originalName": "Jane Doe",
+      "title": "Principal Engineer",
+      "company": "Cloudscale Inc",
+      "companyKey": "cloudscale",
+      "role": "speaker",
+      "seniority": "manager",
+      "topics": [
+        "infrastructure",
+        "ai"
+      ],
+      "sessionTitles": [
+        "Opening Keynote: The Future of Developer Platforms"
+      ],
+      "sourceUrls": [
+        "https://example-conf.com/speakers",
+        "https://example-conf.com/agenda"
+      ],
+      "scores": {
+        "total": 68.1,
+        "roleFit": 1,
+        "companyIcpFit": 0.65,
+        "seniority": 0.45,
+        "topicRelevance": 1,
+        "buyingInfluence": 0.4,
+        "confidence": 0.96
+      },
+      "tier": "B",
+      "qualified": true,
+      "whyThisPersonMatters": "Jane Doe is Principal Engineer at Cloudscale Inc. Manager / Lead (influencer), so buying influence reads as 40%. Company/role signals align with our ICP (engineering, developer). Speaks on ICP-relevant topics: infrastructure, ai. Overall lead score 68/100.",
+      "evidence": [
+        "Title: Principal Engineer",
+        "Company: Cloudscale Inc",
+        "Role on site: speaker",
+        "Sessions: Opening Keynote: The Future of Developer Platforms",
+        "ICP topics: infrastructure, ai",
+        "ICP keywords: engineering, developer",
+        "Source: https://example-conf.com/speakers",
+        "Source: https://example-conf.com/agenda"
+      ],
+      "icpSource": "deterministic",
+      "mergedSourceIds": [
+        "sp-jane-doe"
+      ]
+    },
+    {
+      "leadId": "lead-04",
+      "name": "Amara Okafor",
+      "originalName": "Amara Okafor",
+      "title": "Staff Data Scientist",
+      "company": "InsightAI",
+      "companyKey": "insightai",
+      "role": "speaker",
+      "seniority": "manager",
+      "topics": [
+        "ai",
+        "data centers"
+      ],
+      "sessionTitles": [
+        "Scaling Data Pipelines to Billions of Events"
+      ],
+      "sourceUrls": [
+        "https://example-conf.com/speakers"
+      ],
+      "scores": {
+        "total": 65.4,
+        "roleFit": 1,
+        "companyIcpFit": 0.55,
+        "seniority": 0.45,
+        "topicRelevance": 1,
+        "buyingInfluence": 0.4,
+        "confidence": 0.92
+      },
+      "tier": "B",
+      "qualified": true,
+      "whyThisPersonMatters": "Amara Okafor is Staff Data Scientist at InsightAI. Manager / Lead (influencer), so buying influence reads as 40%. Limited explicit ICP signal in the scraped data. Speaks on ICP-relevant topics: ai, data centers, infrastructure. Overall lead score 65/100.",
+      "evidence": [
+        "Title: Staff Data Scientist",
+        "Company: InsightAI",
+        "Role on site: speaker",
+        "Sessions: Scaling Data Pipelines to Billions of Events",
+        "ICP topics: ai, data centers, infrastructure",
+        "Source: https://example-conf.com/speakers"
+      ],
+      "icpSource": "deterministic",
+      "mergedSourceIds": [
+        "sp-amara-okafor"
+      ]
+    },
+    {
+      "leadId": "lead-05",
+      "name": "Liam Chen",
+      "originalName": "Liam Chen",
+      "title": "Developer Advocate",
+      "company": "StreamWorks",
+      "companyKey": "streamworks",
+      "role": "speaker",
+      "seniority": "practitioner",
+      "topics": [
+        "grid",
+        "energy"
+      ],
+      "sessionTitles": [
+        "Real-Time Streaming Patterns"
+      ],
+      "sourceUrls": [
+        "https://example-conf.com/speakers"
+      ],
+      "scores": {
+        "total": 51.5,
+        "roleFit": 1,
+        "companyIcpFit": 0.45,
+        "seniority": 0.25,
+        "topicRelevance": 0.8333333333333334,
+        "buyingInfluence": 0.2,
+        "confidence": 0.91
+      },
+      "tier": "C",
+      "qualified": true,
+      "whyThisPersonMatters": "Liam Chen is Developer Advocate at StreamWorks. Individual contributor, so buying influence reads as 20%. Company/role signals align with our ICP (developer). Speaks on ICP-relevant topics: grid, energy. Overall lead score 52/100.",
+      "evidence": [
+        "Title: Developer Advocate",
+        "Company: StreamWorks",
+        "Role on site: speaker",
+        "Sessions: Real-Time Streaming Patterns",
+        "ICP topics: grid, energy",
+        "ICP keywords: developer",
+        "Source: https://example-conf.com/speakers"
+      ],
+      "icpSource": "deterministic",
+      "mergedSourceIds": [
+        "sp-liam-chen"
+      ]
+    }
+  ],
+  "companies": [
+    {
+      "companyKey": "cloudscale",
+      "displayName": "Cloudscale Inc",
+      "leadCount": 1,
+      "icpFit": 0.65,
+      "topLeadName": "Jane Doe"
+    },
+    {
+      "companyKey": "dataforge",
+      "displayName": "DataForge",
+      "leadCount": 1,
+      "icpFit": 0.55,
+      "topLeadName": "John Smith"
+    },
+    {
+      "companyKey": "insightai",
+      "displayName": "InsightAI",
+      "leadCount": 1,
+      "icpFit": 0.55,
+      "topLeadName": "Amara Okafor"
+    },
+    {
+      "companyKey": "streamworks",
+      "displayName": "StreamWorks",
+      "leadCount": 1,
+      "icpFit": 0.45,
+      "topLeadName": "Liam Chen"
+    },
+    {
+      "companyKey": "nimbuscloud",
+      "displayName": "NimbusCloud",
+      "leadCount": 1,
+      "icpFit": 0.45,
+      "topLeadName": "Sofia Rossi"
+    }
+  ],
+  "errors": []
+}

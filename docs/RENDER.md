@@ -1,23 +1,62 @@
-# Render.com (free tier blueprint)
+# Deploy Speaker Signal on Render
 
-**Environment variables:** see [`RENDER_ENV.md`](RENDER_ENV.md).
+Blueprint file: [`render.yaml`](../render.yaml) (repo root).
 
-The repo root [`render.yaml`](../render.yaml) defines:
+Creates four Docker web services on branch **`Jobersteadt`**:
 
-- **Web service** `okr-backend`: Docker build from [`backend/Dockerfile`](../backend/Dockerfile), **Free** plan.
-- **Web service** `okr-frontend`: Docker build from [`frontend/Dockerfile`](../frontend/Dockerfile) (Next.js `standalone`), **Free** plan.
-- **PostgreSQL** `okr-postgres`: **Free** plan (limits apply; check [Render pricing](https://render.com/pricing)).
+| Service | Package | Plan |
+| --- | --- | --- |
+| `speaker-signal-dashboard` | `speaker-signal/` | free |
+| `speaker-signal-ingestion` | `speaker-signal-ingestion/` | **starter** (Playwright image) |
+| `speaker-signal-intelligence` | `intelligence-service/` | free |
+| `speaker-signal-gtm` | `gtm-service/` | free |
 
-`okr-frontend` gets **`BACKEND_URL`** from the backend service’s `RENDER_EXTERNAL_URL` (same blueprint). Set **`AUTH0_*`** and **`AUTH0_BASE_URL`** to your frontend URL (e.g. `https://okr-frontend.onrender.com`).
+Agents bind `0.0.0.0:$PORT` (Render injects `PORT`). Local Compose still sets `INGESTION_PORT` / `INTELLIGENCE_PORT` / `GTM_PORT`.
 
-## Deploy
+## 1. Push the Blueprint
 
-1. In Render: **New** → **Blueprint** → connect this GitHub repo and select `render.yaml`.
-2. After the first deploy, open each **Web Service** → **Environment** and set the variables marked `sync: false` (MongoDB, Auth0, `BACKEND_URL` on the API if needed, `CORS_ORIGINS`, `FRONTEND_URL`, etc.). `FLASK_SECRET_KEY` can stay auto-generated unless you rotate it.
-3. Point **`CORS_ORIGINS`** (backend) and Auth0 **Allowed Callback URLs** at the frontend URL, and set **`FRONTEND_URL`** / **`AUTH0_BASE_URL`** (frontend) to that same frontend URL.
+Commit and push `render.yaml` (and related changes) to `Jobersteadt` on GitHub (`taymurfa/C-DID`).
 
-`DATABASE_URL` is wired from the Render Postgres instance; the backend normalizes `postgresql://` to `postgresql+psycopg://` for SQLAlchemy.
+## 2. Create the Blueprint in Render
 
-## Health checks
+1. Open [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint**.
+2. Connect the `taymurfa/C-DID` repo and select branch **`Jobersteadt`**.
+3. Confirm it finds root `render.yaml`, then apply.
 
-Render uses **`GET /live`** (always 200) for load balancer health. **`GET /health`** still checks MongoDB.
+## 3. Fill secrets (`sync: false`)
+
+In each service (or paste the same values where shared):
+
+| Key | Where | Notes |
+| --- | --- | --- |
+| `MONGODB_URI` | all four | Atlas connection string |
+| `OPENAI_API_KEY` | all (optional) | Falls back to templates if unset |
+| `FIRECRAWL_API_KEY` | dashboard | Optional analyze preview |
+| `SEND_MODE` | gtm | `real` to send mail; `mock` to log only |
+| `SMTP_USER` / `SMTP_PASSWORD` / `SMTP_FROM` / `SENDER_EMAIL` | gtm | Zoho (quote passwords that contain `#`) |
+
+Dashboard agent URLs (`INGESTION_API_URL`, `INTELLIGENCE_API_URL`, `GTM_API_URL`) and ingestion’s `INTELLIGENCE_URL` are wired automatically from each service’s `RENDER_EXTERNAL_URL`.
+
+## 4. MongoDB Atlas Network Access
+
+Allow Render egress: add `0.0.0.0/0` under Atlas **Network Access** (demo-friendly), or restrict to Render’s published IPs if you prefer.
+
+## 5. Smoke checks
+
+After deploy:
+
+```bash
+curl https://speaker-signal-ingestion.onrender.com/health
+curl https://speaker-signal-intelligence.onrender.com/health
+curl https://speaker-signal-gtm.onrender.com/health
+curl https://speaker-signal-gtm.onrender.com/mail/status
+# open https://speaker-signal-dashboard.onrender.com
+```
+
+Exact hostnames appear on each service’s Render page (`*.onrender.com`).
+
+## Notes
+
+- Free services **spin down** when idle; first request can take 30–60s.
+- Ingestion uses the Playwright base image — if the build OOMs on free, keep **`starter`** (as in the Blueprint).
+- Do not commit real secrets into `render.yaml`.

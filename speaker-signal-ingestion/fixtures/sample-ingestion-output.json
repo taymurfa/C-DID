@@ -1,0 +1,167 @@
+{
+  "runId": "3f1c8b90-7d2a-4c6e-9b1a-2f5e6d8a4c11",
+  "conference": {
+    "name": "DevReach 2026",
+    "websiteUrl": "https://example-conf.com",
+    "startDate": "2026-09-15",
+    "endDate": "2026-09-16",
+    "location": "Austin, TX, USA"
+  },
+  "coverage": {
+    "hasConferenceDates": true,
+    "hasConferenceLocation": true,
+    "hasAgenda": true,
+    "hasSessionTitles": true,
+    "hasSpeakerNames": true,
+    "hasSpeakerTitles": true,
+    "hasSpeakerCompanies": true,
+    "hasSpeakerSessionLinks": true
+  },
+  "pages": [
+    {
+      "url": "https://example-conf.com",
+      "pageType": "overview",
+      "contentHash": "2b4f9c1d6a7e0b3c8d5f2a1e9c7b6d4f3a2e1c0b9d8f7a6e5c4b3a2d1f0e9c8b",
+      "fetchedAt": "2026-08-08T16:00:00.000Z",
+      "changed": null
+    },
+    {
+      "url": "https://example-conf.com/agenda",
+      "pageType": "agenda",
+      "contentHash": "9a1c2e3b4d5f6a7b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f70819a2b3c4d5",
+      "fetchedAt": "2026-08-08T16:00:01.000Z",
+      "changed": null
+    },
+    {
+      "url": "https://example-conf.com/speakers",
+      "pageType": "speakers",
+      "contentHash": "5d6e7f8091a2b3c4d5e6f70819a2b3c4d5e6f7089a1c2e3b4d5f6a7b8c9d0e1f",
+      "fetchedAt": "2026-08-08T16:00:02.000Z",
+      "changed": null
+    }
+  ],
+  "sessions": [
+    {
+      "sourceId": "ses-opening-keynote",
+      "title": "Opening Keynote: The Future of Developer Platforms",
+      "description": "A look at where developer platforms are heading over the next five years.",
+      "startTime": "2026-09-15T09:00:00-05:00",
+      "endTime": "2026-09-15T10:00:00-05:00",
+      "location": "Main Hall",
+      "topics": ["infrastructure", "ai"],
+      "sourceUrl": "https://example-conf.com/agenda",
+      "sourceUrls": ["https://example-conf.com/agenda"],
+      "speakerSourceIds": ["sp-jane-doe", "sp-sofia-rossi"],
+      "extractionConfidence": 0.95
+    },
+    {
+      "sourceId": "ses-scaling-data",
+      "title": "Scaling Data Pipelines to Billions of Events",
+      "description": "Practical patterns for building resilient, high-throughput data pipelines.",
+      "startTime": "2026-09-15T10:30:00-05:00",
+      "endTime": "2026-09-15T11:15:00-05:00",
+      "location": "Room A",
+      "topics": ["data centers", "infrastructure"],
+      "sourceUrl": "https://example-conf.com/agenda",
+      "sourceUrls": ["https://example-conf.com/agenda"],
+      "speakerSourceIds": ["sp-amara-okafor", "sp-john-smith"],
+      "extractionConfidence": 0.93
+    },
+    {
+      "sourceId": "ses-realtime-streaming",
+      "title": "Real-Time Streaming Patterns",
+      "description": "Techniques for low-latency streaming and event-driven architectures.",
+      "startTime": "2026-09-15T11:30:00-05:00",
+      "endTime": "2026-09-15T12:15:00-05:00",
+      "location": "Room B",
+      "topics": ["grid", "energy"],
+      "sourceUrl": "https://example-conf.com/agenda",
+      "sourceUrls": ["https://example-conf.com/agenda"],
+      "speakerSourceIds": ["sp-liam-chen"],
+      "extractionConfidence": 0.9
+    }
+  ],
+  "speakers": [
+    {
+      "sourceId": "sp-jane-doe",
+      "name": "Jane Doe",
+      "title": "Principal Engineer",
+      "company": "Cloudscale Inc",
+      "bio": "Jane leads platform engineering and loves developer experience.",
+      "linkedinUrl": "https://www.linkedin.com/in/jane-doe",
+      "role": "speaker",
+      "topics": ["infrastructure", "ai"],
+      "sourceUrl": "https://example-conf.com/speakers",
+      "sourceUrls": ["https://example-conf.com/speakers", "https://example-conf.com/agenda"],
+      "sessionSourceIds": ["ses-opening-keynote"],
+      "extractionConfidence": 0.96
+    },
+    {
+      "sourceId": "sp-john-smith",
+      "name": "John Smith",
+      "title": "VP of Engineering",
+      "company": "DataForge",
+      "bio": "John has spent 15 years building data infrastructure at scale.",
+      "linkedinUrl": "https://www.linkedin.com/in/johnsmith",
+      "role": "speaker",
+      "topics": ["data centers", "infrastructure"],
+      "sourceUrl": "https://example-conf.com/speakers",
+      "sourceUrls": ["https://example-conf.com/speakers"],
+      "sessionSourceIds": ["ses-scaling-data"],
+      "extractionConfidence": 0.94
+    },
+    {
+      "sourceId": "sp-amara-okafor",
+      "name": "Amara Okafor",
+      "title": "Staff Data Scientist",
+      "company": "InsightAI",
+      "bio": "Amara works on large-scale ML systems and data quality.",
+      "linkedinUrl": "https://www.linkedin.com/in/amara-okafor",
+      "role": "speaker",
+      "topics": ["ai", "data centers"],
+      "sourceUrl": "https://example-conf.com/speakers",
+      "sourceUrls": ["https://example-conf.com/speakers"],
+      "sessionSourceIds": ["ses-scaling-data"],
+      "extractionConfidence": 0.92
+    },
+    {
+      "sourceId": "sp-liam-chen",
+      "name": "Liam Chen",
+      "title": "Developer Advocate",
+      "company": "StreamWorks",
+      "bio": "Liam helps teams adopt real-time streaming technologies.",
+      "linkedinUrl": null,
+      "role": "speaker",
+      "topics": ["grid", "energy"],
+      "sourceUrl": "https://example-conf.com/speakers",
+      "sourceUrls": ["https://example-conf.com/speakers"],
+      "sessionSourceIds": ["ses-realtime-streaming"],
+      "extractionConfidence": 0.91
+    },
+    {
+      "sourceId": "sp-sofia-rossi",
+      "name": "Sofia Rossi",
+      "title": "CTO",
+      "company": "NimbusCloud",
+      "bio": "Sofia oversees cloud strategy and platform architecture.",
+      "linkedinUrl": null,
+      "role": "speaker",
+      "topics": ["infrastructure"],
+      "sourceUrl": "https://example-conf.com/speakers",
+      "sourceUrls": ["https://example-conf.com/speakers"],
+      "sessionSourceIds": ["ses-opening-keynote"],
+      "extractionConfidence": 0.9
+    }
+  ],
+  "discoveredEvents": [
+    {
+      "eventName": "DevReach 2027",
+      "eventUrl": "https://example-conf.com/2027",
+      "isRelevantConference": true,
+      "confidence": 0.88,
+      "reason": "Next edition of the same conference series announced on the site",
+      "startDate": "2027"
+    }
+  ],
+  "errors": []
+}

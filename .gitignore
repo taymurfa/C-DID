@@ -13,8 +13,8 @@ ENV/
 .env
 .env.local
 .env*.local
-backend/.env
 frontend/.env.local
+speaker-signal/.env.local
 
 # Note: .env.example files should be committed to the repository
 
@@ -23,11 +23,15 @@ frontend/.env.local
 out/
 build/
 dist/
+*.tsbuildinfo
 
 # IDE
 .vscode/
 .idea/
 *.swp
+
+# Cursor MCP config (contains API keys / DB connection string)
+.cursor/mcp.json
 *.swo
 *~
 
@@ -47,3 +51,11 @@ yarn-error.log*
 # Testing
 coverage/
 .nyc_output/
+
+# Codex local deliverables and scratch work
+/outputs/
+/work/
+
+# Agent local envs / caches
+agents/**/.venv/
+agents/**/__pycache__/
