@@ -26,16 +26,6 @@ import {
   type MailStatus,
 } from "@/lib/desk-profile";
 
-function stampDemoRecipientEmail(
-  leads: DeskLead[],
-  teamInbox: string,
-): DeskLead[] {
-  return leads.map((lead) => ({
-    ...lead,
-    email: lead.email ?? teamInbox,
-  }));
-}
-
 export type AgentHealthDot = {
   service: string;
   status: "ok" | "down" | "unknown";
@@ -60,6 +50,16 @@ export type DeskLead = Speaker &
   Partial<
     Pick<QualifiedLead, "topics" | "role" | "isICP" | "rank" | "normalizedCompany">
   >;
+
+function stampDemoRecipientEmail(
+  leads: DeskLead[],
+  teamInbox: string,
+): DeskLead[] {
+  return leads.map((lead) => ({
+    ...lead,
+    email: lead.email ?? teamInbox,
+  }));
+}
 
 export type QualifyNotice = {
   mode: "live" | "demo";

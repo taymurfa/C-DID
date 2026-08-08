@@ -177,6 +177,42 @@ a { color: inherit; }
 .draft-send-note, .draft-send-error { margin: 10px 0 0; font-size: 12px; line-height: 1.4; }
 .draft-send-note { color: var(--muted); }
 .draft-send-error { color: #f87171; }
+.demo-recipient-chip {
+  display: flex; align-items: center; gap: 8px; margin: 0 16px 10px; padding: 8px 11px;
+  border: 1px solid var(--line); border-radius: 6px; background: #151818; color: var(--muted); font-size: 11px;
+}
+.demo-recipient-chip strong { color: var(--text); font-weight: 650; }
+.demo-recipient-chip em { margin-left: auto; font-style: normal; color: var(--muted); font-size: 10px; font-weight: 650; }
+.sequence-demo-email { color: var(--amber) !important; font-size: 10px !important; }
+.sequence-email-list { margin: 0 16px 12px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.sequence-email-list-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--text); font-size: 12px; font-weight: 650;
+}
+.sequence-email-list-head small { color: var(--muted); font-size: 10px; font-weight: 600; }
+.sequence-email-row {
+  display: grid; width: 100%; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  border: 0; border-bottom: 1px solid var(--line); background: transparent; padding: 10px 12px;
+  text-align: left; cursor: pointer; color: inherit; font: inherit;
+}
+.sequence-email-row:last-child { border-bottom: 0; }
+.sequence-email-row:hover { background: #1a1d1d; }
+.sequence-email-row.sequence-email-active { background: #1f2323; }
+.sequence-email-anchor {
+  display: inline-flex; min-height: 22px; align-items: center; justify-content: center;
+  border-radius: 4px; background: #222626; color: var(--amber); font-size: 10px; font-weight: 700;
+}
+.sequence-email-copy strong, .sequence-email-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sequence-email-copy strong { font-size: 12px; font-weight: 600; }
+.sequence-email-copy small { margin-top: 2px; color: var(--muted); font-size: 10px; }
+.sequence-email-row em { color: var(--muted); font-size: 10px; font-style: normal; font-weight: 650; }
+.draft-anchor-picker { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; padding: 0 18px; }
+.draft-anchor-picker button {
+  min-height: 28px; border: 1px solid var(--line); border-radius: 6px; background: transparent;
+  padding: 0 10px; color: var(--muted); cursor: pointer; font: inherit; font-size: 11px; font-weight: 650;
+}
+.draft-anchor-picker button.draft-anchor-active { border-color: var(--amber); color: var(--amber); }
+.sequence-footer strong { display: inline-flex; align-items: center; gap: 5px; }
 @keyframes draft-spin { to { transform: rotate(360deg); } }
 .funnel-page { display: grid; gap: 11px; }
 .funnel-lead-control { padding: 14px; display: flex; align-items: center; gap: 12px; }

@@ -160,10 +160,10 @@ export function DeskShell({
             agentRunsHref={deskHref(basePath, "/agent-runs")}
           />
           <div className="profile">
-            <span className="profile-avatar">AK</span>
+            <span className="profile-avatar">{DESK_OPERATOR.initials}</span>
             <span>
-              <strong>Alex Kim</strong>
-              <small>Candid Intelligence</small>
+              <strong>{DESK_OPERATOR.name}</strong>
+              <small>{DESK_OPERATOR.company}</small>
             </span>
             <ChevronDown size={16} />
           </div>
