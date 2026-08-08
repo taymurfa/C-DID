@@ -16,7 +16,7 @@ ENV/
 backend/.env
 frontend/.env.local
 
-# Note: .env.example files should be committed to the repository
+# Note: .env files should be committed to the repository
 
 # Next.js
 .next/
@@ -47,3 +47,7 @@ yarn-error.log*
 # Testing
 coverage/
 .nyc_output/
+
+# Agent local envs / caches
+agents/**/.venv/
+agents/**/__pycache__/

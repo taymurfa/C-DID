@@ -1,0 +1,16 @@
+# Local MongoDB for developing Agent 3 (in a real env, the cluster is provided for you).
+# Start:  docker compose up -d       Stop:  docker compose down
+# Data persists in the named volume across restarts. Connect with:
+#   MONGODB_URI=mongodb://localhost:27017   MONGODB_DB_NAME=hackathon_db
+services:
+  mongo:
+    image: mongo:7
+    container_name: agent3-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - agent3_mongo_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  agent3_mongo_data:
