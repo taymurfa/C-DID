@@ -1,4 +1,20 @@
-# Hackathon Template (OKRs)
+# Candid Intelligence — Speaker Signal
+
+The active D-Branch hackathon build lives in [`speaker-signal/`](speaker-signal/). It turns public energy-conference agendas into provenance-backed, explainably scored speakers and event-anchored outreach drafts.
+
+```bash
+cd speaker-signal
+pnpm install
+pnpm dev
+```
+
+Open `http://localhost:3000`. The app works without credentials in Demo data mode. Set `FIRECRAWL_API_KEY` and switch to **Live Firecrawl** to retrieve a public conference page through Firecrawl v2.
+
+See the [Speaker Signal README](speaker-signal/README.md) for architecture, scoring, compliance, database setup, and next steps.
+
+---
+
+## Legacy Hackathon Template (OKRs)
 
 A full-stack OKR application featuring Next.js frontend, Flask backend, Auth0 authentication, hierarchical OKRs (org → department → team → user), role-based access control, AWS-ready Postgres persistence, and automated Gmail reminders.
 
