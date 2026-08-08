@@ -9,6 +9,7 @@ import {
   isAutoIngestEnabled,
   setAutoIngestLogger,
 } from "./ingest/autoIngestQueue.js";
+import { runBootstrapDiscovery } from "./ingest/bootstrap.js";
 import { autoIngestRoutes } from "./routes/autoIngest.js";
 import { discoverRoutes } from "./routes/discover.js";
 import { healthRoutes } from "./routes/health.js";
@@ -96,6 +97,9 @@ async function start() {
     app.log.error(err);
     process.exit(1);
   }
+
+  // Fire-and-forget: begin grabbing conferences from configured seed pages.
+  void runBootstrapDiscovery(app.log);
 }
 
 // Only auto-start when run directly (not when imported by tests).

@@ -28,6 +28,9 @@ dist/
 .vscode/
 .idea/
 *.swp
+
+# Cursor MCP config (contains API keys / DB connection string)
+.cursor/mcp.json
 *.swo
 *~
 

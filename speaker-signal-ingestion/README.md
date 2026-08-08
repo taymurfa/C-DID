@@ -59,6 +59,10 @@ The queue is in-process and self-limiting: it **dedupes** by canonical URL,
 (`AUTO_INGEST_MAX_DEPTH`) so it never runs away crawling the open web. Set
 `AUTO_INGEST_ENABLED=false` to fall back to purely manual operation.
 
+Set `BOOTSTRAP_SEEDS` (comma-separated seed pages) to make the service kick off
+discovery automatically at startup, so a freshly booted process/container begins
+grabbing on its own instead of waiting for the first HTTP call.
+
 Inspect the live queue at `GET /auto-ingest`:
 
 ```json
@@ -83,6 +87,33 @@ npm run dev
 ```
 
 The service listens on **port 8001** by default.
+
+### Run with Docker
+
+The image is based on the official Playwright image, so Chromium and its OS
+dependencies are baked in (the crawler uses them only as a fallback for
+JS-rendered pages). Configuration is read from the shared **`backend/.env`** via
+Compose's `env_file`, so no service-local `.env` is needed.
+
+```bash
+docker compose up --build
+```
+
+This compiles TypeScript, starts the service on **8001**, and - because the
+Compose file sets `BOOTSTRAP_SEEDS` - immediately begins discovering conferences
+and auto-ingesting every relevant hit. Change (or clear) `BOOTSTRAP_SEEDS` to
+control what it grabs on boot. Watch progress with:
+
+```bash
+curl http://localhost:8001/auto-ingest   # live queue stats
+```
+
+To build/run just the image without Compose:
+
+```bash
+docker build -t speaker-signal-ingestion .
+docker run --env-file ../backend/.env -e BOOTSTRAP_SEEDS="https://www.7x24exchange.org/" -p 8001:8001 speaker-signal-ingestion
+```
 
 ### Configuration
 

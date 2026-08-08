@@ -49,6 +49,16 @@ function readFloat(name: string, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function readCsv(name: string, fallback: string[]): string[] {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parts = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return parts.length ? parts : fallback;
+}
+
 export const env = {
   // Use a dedicated INGESTION_PORT so we stay on 8001 and never inherit the
   // backend's generic PORT (e.g. 5001) from the shared .env.
@@ -90,6 +100,14 @@ export const env = {
     maxDepth: readInt("AUTO_INGEST_MAX_DEPTH", 1),
     // Page budget for an auto-triggered run (defaults to the crawl budget).
     maxPages: readInt("AUTO_INGEST_MAX_PAGES", readInt("CRAWL_MAX_PAGES", 12)),
+  },
+
+  // On boot, kick off discovery from these seed pages so the service starts
+  // "grabbing everything" on its own (each relevant hit flows into the
+  // auto-ingest queue). Empty = wait for manual /discover or /ingest calls.
+  bootstrap: {
+    seeds: readCsv("BOOTSTRAP_SEEDS", []),
+    maxPerSeed: readInt("BOOTSTRAP_MAX_PER_SEED", 10),
   },
 } as const;
 
