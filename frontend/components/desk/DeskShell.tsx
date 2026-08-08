@@ -281,9 +281,9 @@ function SidebarHealth({
   agentRunsHref: string;
 }) {
   const agents = [
-    { key: "ingestion" as const, label: ":8001", title: "Ingestion" },
-    { key: "intelligence" as const, label: ":8002", title: "Intelligence" },
-    { key: "gtm" as const, label: ":8003", title: "GTM" },
+    { key: "ingestion" as const, label: "Ingestion", title: "Ingestion" },
+    { key: "intelligence" as const, label: "Intelligence", title: "Intelligence" },
+    { key: "gtm" as const, label: "GTM", title: "GTM" },
   ];
   const allOk = systemHealth.status === "ok";
 
