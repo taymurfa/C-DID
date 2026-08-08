@@ -28,11 +28,11 @@ export function SequencesView() {
 
   return (
     <>
-      <div className="primary-grid sequences-grid">
+      <div className={`primary-grid sequences-grid${rows.length ? "" : " sequences-empty-grid"}`}>
         <section className="panel page-panel">
           <PanelHeader title="Enrolled sequences" action={`${rows.length} leads`} />
           <div className="sequence-index">
-            {rows.map((lead) => {
+            {rows.length ? rows.map((lead) => {
               const status = data.statuses[lead.id] ?? "identified";
               const active = lead.id === data.selected?.id;
               return (
@@ -58,7 +58,7 @@ export function SequencesView() {
                   <small>{lead.outreachStage}</small>
                 </button>
               );
-            })}
+            }) : <SequenceEmptyState title="No sequences yet" detail="Run a conference scan to qualify contacts and generate outreach drafts." />}
           </div>
         </section>
 
@@ -198,7 +198,7 @@ export function SequencesView() {
               </strong>
             </footer>
           </section>
-        ) : null}
+        ) : <section className="panel sequence-panel page-panel"><PanelHeader title="Event-anchored sequence" action="Waiting for a contact" /><SequenceEmptyState title="Select a contact to review a sequence" detail="Once a conference is scanned, qualified contacts and their event-based outreach drafts will appear here." /></section>}
       </div>
 
       {reviewOpen && speaker ? (
@@ -214,4 +214,8 @@ export function SequencesView() {
       ) : null}
     </>
   );
+}
+
+function SequenceEmptyState({ title, detail }: { title: string; detail: string }) {
+  return <div className="sequence-empty"><Send size={22} /><strong>{title}</strong><p>{detail}</p></div>;
 }

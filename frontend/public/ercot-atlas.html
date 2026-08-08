@@ -1,4 +1,10 @@
 <title>ERCOT Power Project Atlas</title>
+<script>
+  (() => {
+    const theme = new URLSearchParams(location.search).get('theme');
+    if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+  })();
+</script>
 <style>
 /* ============================================================
    Apple-style neutral chrome. Grays and whites carry the UI;
@@ -981,6 +987,10 @@ function onThemeChange() {
 }
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', onThemeChange);
 new MutationObserver(onThemeChange).observe(document.documentElement, { attributeFilter:['data-theme'] });
+window.addEventListener('message', (event) => {
+  if (event.origin !== window.location.origin || event.data?.type !== 'atlas-theme') return;
+  if (event.data.theme === 'light' || event.data.theme === 'dark') document.documentElement.dataset.theme = event.data.theme;
+});
 
 refreshTheme();
 requestAnimationFrame(() => { resize(); fitTexas(); renderAll(); });
