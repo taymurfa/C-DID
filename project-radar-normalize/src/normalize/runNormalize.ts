@@ -44,9 +44,7 @@ function toCanonical(records: RawRecord[]): CanonicalProject {
     milestone: r.milestone,
     evidence: r.evidence,
   }));
-  const hardEr =
-    Boolean(records[0]?.clusterId?.startsWith("er-hard")) ||
-    (new Set(records.map((r) => r.source)).size >= 3 && aliases.length >= 3);
+  const hardEr = Boolean(records[0]?.clusterId?.startsWith("er-hard"));
 
   const name = pickCanonicalName(records);
   const hash = createHash("sha1")

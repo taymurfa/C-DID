@@ -105,10 +105,10 @@ Open **Funnel**. Advance Maya (or show existing drop-off) **Identified → Conta
 
 **Agent Runs** / System health: green when Compose is up. If venue Wi‑Fi flakes, flip **Demo data** and re-run Analyze — same story, no credentials.
 
-### 4:30 — Optional Atlas cameo (only if ahead)
+### 4:30 — Optional Track 1 cameo (only if ahead)
 
-If Track 2 is solid and time remains: open [`frontend/`](frontend/) ERCOT map as “Track 1 direction / next-week project↔people join” — do **not** derail the Speaker Signal story.
+If Track 2 is solid and time remains: open `http://localhost:3001` → **Demo ingest** → Lone Star **ER** project (three aliases, stage evidence, people join). Keep it to ~90s — do **not** derail the Speaker Signal story.
 
 ### Close
 
-> Signal quality + sequencing depth + an addictive desk — runnable today with Compose, mock-safe by default.
+> Signal quality + sequencing depth + an addictive desk — runnable today with Compose, mock-safe by default. Track 1 Project Radar POC rides the same agent pattern for projects.

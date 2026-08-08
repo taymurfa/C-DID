@@ -1,44 +1,44 @@
 [
   {
-    companyKeys: ["lone star", "lsbtm", "lonestar"],
-    people: [
+    "companyKeys": ["lone star", "lsbtm", "lonestar"],
+    "people": [
       {
-        name: "Jordan Hale",
-        title: "VP of Infrastructure",
-        company: "Lone Star Power Partners",
-        conference: "GridForward Summit",
-        topic: "Behind-the-meter storage for AI campuses"
+        "name": "Jordan Hale",
+        "title": "VP of Infrastructure",
+        "company": "Lone Star Power Partners",
+        "conference": "GridForward Summit",
+        "topic": "Behind-the-meter storage for AI campuses"
       },
       {
-        name: "Priya Nair",
-        title: "Director of Project Delivery",
-        company: "Lone Star Power Partners",
-        conference: "Energy Storage North America",
-        topic: "Interconnection timing for BESS"
+        "name": "Priya Nair",
+        "title": "Director of Project Delivery",
+        "company": "Lone Star Power Partners",
+        "conference": "Energy Storage North America",
+        "topic": "Interconnection timing for BESS"
       }
     ]
   },
   {
-    companyKeys: ["north loop", "nl campus"],
-    people: [
+    "companyKeys": ["north loop", "nl campus"],
+    "people": [
       {
-        name: "Marcus Chen",
-        title: "Head of Power Development",
-        company: "North Loop Power Co",
-        conference: "Data Center World",
-        topic: "On-site gas generation for hyperscale campuses"
+        "name": "Marcus Chen",
+        "title": "Head of Power Development",
+        "company": "North Loop Power Co",
+        "conference": "Data Center World",
+        "topic": "On-site gas generation for hyperscale campuses"
       }
     ]
   },
   {
-    companyKeys: ["prairie gate"],
-    people: [
+    "companyKeys": ["prairie gate"],
+    "people": [
       {
-        name: "Elena Vasquez",
-        title: "Chief Development Officer",
-        company: "Prairie Gate Energy",
-        conference: "POWERGEN",
-        topic: "Gas-to-power peaking in ERCOT"
+        "name": "Elena Vasquez",
+        "title": "Chief Development Officer",
+        "company": "Prairie Gate Energy",
+        "conference": "POWERGEN",
+        "topic": "Gas-to-power peaking in ERCOT"
       }
     ]
   }

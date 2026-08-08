@@ -225,8 +225,8 @@ export type SignalDataValue = {
 const SignalDataContext = createContext<SignalDataValue | null>(null);
 
 function useSignalDataState(): SignalDataValue {
-  // Empty URL → GridForward fixture through the same Agent 2/3 pipeline.
-  const [url, setUrl] = useState("");
+  // Desk starts empty; paste a public conference URL and Analyze to fill via Agents 1→2.
+  const [url, setUrl] = useState(DEFAULT_LIVE_URL);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [pipelineIndex, setPipelineIndex] = useState(-1);
@@ -391,48 +391,7 @@ function useSignalDataState(): SignalDataValue {
 
     async function bootstrap() {
       await refreshFunnel();
-
-      try {
-        const response = await fetch("/api/qualify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        });
-        const payload = (await response.json()) as QualifyResponse & {
-          error?: string;
-          degraded?: boolean;
-          source?: string;
-        };
-        if (!response.ok || cancelled) return;
-
-        applyQualifyPayload(payload, {
-          setLeads,
-          setStats,
-          setQualifyConference,
-          setStatuses,
-          setConferences,
-          setSelectedConferenceId,
-          setSelectedId,
-        }, { postEvents: false });
-        const sourceNote =
-          payload.source === "agent2"
-            ? " Scored by Agent 2."
-            : payload.degraded
-              ? " Agent 2 unreachable — scored with embedded fallback."
-              : "";
-        setNotice({
-          mode: payload.mode,
-          message: `Loaded ${payload.stats.qualified} qualified speakers.${sourceNote}`,
-          speakersIngested: payload.stats.speakersIngested,
-          qualified: payload.stats.qualified,
-          degraded: payload.degraded,
-        });
-        await refreshFunnel();
-      } catch {
-        // Keep seed desk if bootstrap fails.
-      } finally {
-        if (!cancelled) setBootstrapped(true);
-      }
+      if (!cancelled) setBootstrapped(true);
     }
 
     void bootstrap();
@@ -496,6 +455,13 @@ function useSignalDataState(): SignalDataValue {
   const analyzeConference = useCallback(async () => {
     setError(null);
     setNotice(null);
+
+    const trimmed = url.trim();
+    if (!trimmed) {
+      setError("Paste a public conference or agenda URL, then Analyze.");
+      return false;
+    }
+
     setIsAnalyzing(true);
     setPipelineIndex(0);
 
@@ -505,13 +471,10 @@ function useSignalDataState(): SignalDataValue {
         await delay(320);
       }
 
-      const trimmed = url.trim();
-      const body = trimmed ? { conferenceUrl: trimmed } : {};
-
       const response = await fetch("/api/qualify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ conferenceUrl: trimmed }),
       });
       const payload = (await response.json()) as QualifyResponse & {
         error?: string;
@@ -522,9 +485,7 @@ function useSignalDataState(): SignalDataValue {
 
       if (!payload.leads?.length) {
         throw new Error(
-          trimmed
-            ? "No speakers extracted from that URL. Try another public agenda page."
-            : "Qualification returned no leads.",
+          "No speakers extracted from that URL. Try another public agenda page.",
         );
       }
 
@@ -568,8 +529,8 @@ function useSignalDataState(): SignalDataValue {
     const trimmed = url.trim();
     if (!trimmed) {
       setNotice({
-        mode: "demo",
-        message: "Paste a conference URL to preview a crawl, or run Analyze with an empty URL for the sample conference.",
+        mode: "live",
+        message: "Paste a public conference URL to preview a crawl.",
         speakersIngested: stats?.speakersIngested ?? 0,
         qualified: stats?.qualified ?? 0,
       });

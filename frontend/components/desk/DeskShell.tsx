@@ -223,7 +223,7 @@ export function DeskShell({
               <input
                 value={data.url}
                 onChange={(event) => data.setUrl(event.target.value)}
-                placeholder="Conference URL (optional — blank uses sample)"
+                placeholder="https://… public conference or agenda URL"
               />
               {data.url ? (
                 <button onClick={() => data.setUrl("")} aria-label="Clear URL">

@@ -49,8 +49,8 @@ export function OverviewView() {
             data.stats
               ? `${data.stats.afterDedupe} after dedupe`
               : data.bootstrapped
-                ? "Awaiting analyze"
-                : "Loading pipeline…"
+                ? "Paste a URL and Analyze"
+                : "Connecting…"
           }
           positive
         />
@@ -85,17 +85,25 @@ export function OverviewView() {
             <span>Outreach</span>
           </div>
           <div className="speaker-list">
-            {previewSpeakers.map((row, index) => (
-              <SpeakerRow
-                key={row.id}
-                speaker={row}
-                rank={index + 1}
-                selected={row.id === data.selected?.id}
-                status={data.statuses[row.id] ?? "identified"}
-                onSelect={() => openSpeaker(row.id)}
-                showEvidence={false}
-              />
-            ))}
+            {previewSpeakers.length === 0 ? (
+              <div className="drawer-empty" style={{ padding: "1.5rem 1rem" }}>
+                <UsersRound size={22} />
+                <strong>No speakers yet</strong>
+                <p>Paste a public conference URL and run Analyze to ingest and qualify live.</p>
+              </div>
+            ) : (
+              previewSpeakers.map((row, index) => (
+                <SpeakerRow
+                  key={row.id}
+                  speaker={row}
+                  rank={index + 1}
+                  selected={row.id === data.selected?.id}
+                  status={data.statuses[row.id] ?? "identified"}
+                  onSelect={() => openSpeaker(row.id)}
+                  showEvidence={false}
+                />
+              ))
+            )}
           </div>
           <footer className="panel-footer">
             <Link href={deskHref(basePath, "/speakers")} className="panel-action-link">
@@ -197,33 +205,41 @@ export function OverviewView() {
             href={deskHref(basePath, "/conferences")}
           />
           <div className="event-rail">
-            {data.conferences.slice(0, 4).map((conference) => (
-              <article
-                key={conference.id}
-                className={
-                  conference.id === data.selectedConferenceId ? "event-selected" : ""
-                }
-              >
-                <button
-                  type="button"
-                  className="event-select"
-                  onClick={() => data.selectConference(conference.id)}
+            {data.conferences.length === 0 ? (
+              <div className="drawer-empty" style={{ padding: "1.25rem 1rem" }}>
+                <CalendarDays size={22} />
+                <strong>No conferences loaded</strong>
+                <p>Analyze a URL or use Discover to find events.</p>
+              </div>
+            ) : (
+              data.conferences.slice(0, 4).map((conference) => (
+                <article
+                  key={conference.id}
+                  className={
+                    conference.id === data.selectedConferenceId ? "event-selected" : ""
+                  }
                 >
-                  <small>
-                    {formatShortDate(conference.startDate)} –{" "}
-                    {formatShortDate(conference.endDate)}
-                  </small>
-                  <strong>{conference.name}</strong>
-                  <span>{conference.city}</span>
-                  <div>
-                    <UsersRound size={13} />
-                    {conference.speakerCount}
-                    <Target size={13} />
-                    {conference.qualifiedCount}
-                  </div>
-                </button>
-              </article>
-            ))}
+                  <button
+                    type="button"
+                    className="event-select"
+                    onClick={() => data.selectConference(conference.id)}
+                  >
+                    <small>
+                      {formatShortDate(conference.startDate)} –{" "}
+                      {formatShortDate(conference.endDate)}
+                    </small>
+                    <strong>{conference.name}</strong>
+                    <span>{conference.city}</span>
+                    <div>
+                      <UsersRound size={13} />
+                      {conference.speakerCount}
+                      <Target size={13} />
+                      {conference.qualifiedCount}
+                    </div>
+                  </button>
+                </article>
+              ))
+            )}
           </div>
         </section>
 
