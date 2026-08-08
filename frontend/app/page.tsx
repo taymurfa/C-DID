@@ -1,14 +1,10 @@
 "use client";
 
 import { Map, Radio } from "lucide-react";
-import { useState } from "react";
-import { SignalDesk } from "@/components/SignalDesk";
-import "./signal-desk.css";
-
-type View = "map" | "signals";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const [view, setView] = useState<View>("map");
+  const router = useRouter();
 
   return (
     <div className="atlas-product-shell">
@@ -16,9 +12,8 @@ export default function Home() {
         <button
           type="button"
           role="tab"
-          aria-selected={view === "map"}
-          className={view === "map" ? "atlas-toggle-active" : ""}
-          onClick={() => setView("map")}
+          aria-selected={true}
+          className="atlas-toggle-active"
         >
           <Map size={15} aria-hidden="true" />
           Project Atlas
@@ -26,24 +21,19 @@ export default function Home() {
         <button
           type="button"
           role="tab"
-          aria-selected={view === "signals"}
-          className={view === "signals" ? "atlas-toggle-active" : ""}
-          onClick={() => setView("signals")}
+          aria-selected={false}
+          onClick={() => router.push("/signal")}
         >
           <Radio size={15} aria-hidden="true" />
           Speaker Signal
         </button>
       </div>
 
-      {view === "map" ? (
-        <iframe
-          className="atlas-frame"
-          src="/ercot-atlas.html"
-          title="ERCOT Power Project Atlas"
-        />
-      ) : (
-        <SignalDesk />
-      )}
+      <iframe
+        className="atlas-frame"
+        src="/ercot-atlas.html"
+        title="ERCOT Power Project Atlas"
+      />
     </div>
   );
 }

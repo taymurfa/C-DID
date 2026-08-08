@@ -142,8 +142,9 @@ describe("POST /api/qualify", () => {
       errors: [],
     };
 
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
+    const fetchMock = vi.fn(
+      async (...args: [RequestInfo | URL, RequestInit?]) => {
+      const url = String(args[0]);
       if (url.endsWith("/ingest")) {
         return new Response(JSON.stringify(ingestion), {
           status: 200,
@@ -157,7 +158,8 @@ describe("POST /api/qualify", () => {
         });
       }
       return new Response("not found", { status: 404 });
-    });
+    },
+    );
     vi.stubGlobal("fetch", fetchMock);
 
     const res = await POST(
