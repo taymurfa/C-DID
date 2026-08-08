@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Mail, Send, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { FUNNEL_LABELS } from "@/lib/pipeline/funnel";
 import { useSignalData } from "@/lib/useSignalData";
@@ -23,6 +23,8 @@ export function SequencesView() {
   });
   const rows = enrolled.length > 0 ? enrolled : data.filteredLeads;
   const speaker = data.selected;
+  const teamInbox = data.teamInbox;
+  const canSendDemo = Boolean(data.mailStatus?.canSendDemo);
 
   return (
     <>
@@ -48,6 +50,9 @@ export function SequencesView() {
                     <small>
                       {lead.company || "Unknown"} · {lead.conference}
                     </small>
+                    {lead.email ? (
+                      <small className="sequence-demo-email">Demo → {lead.email}</small>
+                    ) : null}
                   </span>
                   <em>{FUNNEL_LABELS[status]}</em>
                   <small>{lead.outreachStage}</small>
@@ -77,6 +82,15 @@ export function SequencesView() {
                 <small>signal</small>
               </span>
             </div>
+
+            <div className="demo-recipient-chip" role="status">
+              <Mail size={14} />
+              <span>
+                Demo recipient · <strong>{speaker.email || teamInbox}</strong>
+              </span>
+              <em>{canSendDemo ? "Manual send ready" : "Draft only"}</em>
+            </div>
+
             <div className="sequence-line" aria-label="Outreach sequence timeline">
               {data.sequenceSteps.map((step, index) => (
                 <article
@@ -108,10 +122,52 @@ export function SequencesView() {
                 </article>
               ))}
             </div>
+
+            <div className="sequence-email-list" aria-label="Sequence emails">
+              <div className="sequence-email-list-head">
+                <span>Emails in this sequence</span>
+                <small>{data.drafts.length || data.sequenceSteps.length} drafts</small>
+              </div>
+              {(data.drafts.length
+                ? data.drafts
+                : data.sequenceSteps.map((step) => ({
+                    anchor: step.anchor,
+                    subject:
+                      step.subject ||
+                      `Quick note ahead of ${speaker.conference}`,
+                    body: "",
+                    groundedOn: [] as string[],
+                    generatedBy: "template" as const,
+                  }))
+              ).map((draft) => {
+                const step = data.sequenceSteps.find((s) => s.anchor === draft.anchor);
+                const active = data.activeDraftAnchor === draft.anchor;
+                return (
+                  <button
+                    key={draft.anchor}
+                    type="button"
+                    className={`sequence-email-row ${active ? "sequence-email-active" : ""}`}
+                    onClick={() => data.setActiveDraftAnchor(draft.anchor)}
+                  >
+                    <span className="sequence-email-anchor">{draft.anchor}</span>
+                    <span className="sequence-email-copy">
+                      <strong>{draft.subject}</strong>
+                      <small>
+                        {step
+                          ? `${formatShortDate(step.scheduledFor)} · ${step.status}`
+                          : draft.generatedBy}
+                      </small>
+                    </span>
+                    {active ? <em>Selected</em> : <em>{step?.status ?? "Draft"}</em>}
+                  </button>
+                );
+              })}
+            </div>
+
             <div className="draft-card">
               <div>
                 <Sparkles size={15} />
-                <span>Personalized draft</span>
+                <span>Selected draft</span>
                 <small>
                   {data.sequenceLoading
                     ? "Generating…"
@@ -126,16 +182,19 @@ export function SequencesView() {
                   : `“Your session on ${speaker.session?.toLowerCase() ?? "the agenda"} caught my eye…”`}
               </p>
               <button type="button" onClick={() => setReviewOpen(true)}>
-                Review draft
+                Review &amp; send
                 <ArrowRight size={14} />
               </button>
             </div>
             <footer className="sequence-footer">
               <span>
-                <i /> Draft only — no automatic sending
+                <i />{" "}
+                {canSendDemo
+                  ? "No automatic sending — pick a draft and send manually"
+                  : "Draft only — no automatic sending"}
               </span>
               <strong>
-                {data.sequenceSteps.length} touches · demo send → team inbox
+                <Send size={12} /> {data.sequenceSteps.length} touches · → {teamInbox}
               </strong>
             </footer>
           </section>
@@ -146,6 +205,10 @@ export function SequencesView() {
         <DraftReviewModal
           speaker={speaker}
           draft={data.activeDraft}
+          drafts={data.drafts}
+          activeAnchor={data.activeDraftAnchor}
+          onSelectAnchor={data.setActiveDraftAnchor}
+          teamInbox={teamInbox}
           onClose={() => setReviewOpen(false)}
         />
       ) : null}

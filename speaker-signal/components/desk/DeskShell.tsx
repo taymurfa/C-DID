@@ -31,6 +31,7 @@ import {
   type ReactNode,
 } from "react";
 import { useSignalData } from "@/lib/useSignalData";
+import { DESK_OPERATOR } from "@/lib/desk-profile";
 import { deskHref, PIPELINE_STEPS, PipelineSteps } from "@/components/desk/shared";
 import { SpeakerDrawer } from "@/components/desk/SpeakerDrawer";
 

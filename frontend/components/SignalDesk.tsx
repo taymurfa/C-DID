@@ -26,6 +26,7 @@ import {
 import { useEffect, useRef, useState, type RefObject } from "react";
 import type { Conference, LeadStatus } from "@/lib/contracts";
 import { type DeskLead, type SystemHealth, useSignalData } from "@/lib/useSignalData";
+import { DESK_OPERATOR } from "@/lib/desk-profile";
 import { DeskUiProvider, useDeskUi } from "@/components/desk/DeskShell";
 import { CompaniesView } from "@/components/desk/CompaniesView";
 import { FunnelView } from "@/components/desk/FunnelView";
@@ -204,7 +205,104 @@ function AgentMetric({ icon: Icon, label, value }: { icon: LucideIcon; label: st
 }
 
 function ProfilePage() {
-  return <div className="signal-page profile-page"><section className="profile-hero panel"><span className="profile-large-avatar">AK</span><div><h2>Alex Kim</h2><p>Research lead · Candid Intelligence</p></div><button className="header-action">Edit profile</button></section><div className="profile-grid"><section className="profile-section panel"><h2>Research preferences</h2><dl><div><dt>Primary focus</dt><dd>Infrastructure development</dd></div><div><dt>Markets</dt><dd>ERCOT · Storage · AI power</dd></div><div><dt>Minimum signal score</dt><dd>80 / 100</dd></div></dl></section><section className="profile-section panel"><h2>Notifications</h2><div className="preference-row"><span><strong>New high-signal people</strong></span><i className="preference-enabled" aria-label="Enabled" /></div><div className="preference-row"><span><strong>Agent review queue</strong></span><i className="preference-enabled" aria-label="Enabled" /></div></section></div></div>;
+  const data = useSignalData();
+  const mail = data.mailStatus;
+  const canSend = Boolean(mail?.canSendDemo);
+  const modeLabel = canSend
+    ? "Real SMTP · manual demo send only"
+    : "Draft only · no automatic sending";
+
+  return (
+    <div className="signal-page profile-page">
+      <section className="profile-hero panel">
+        <span className="profile-large-avatar">{DESK_OPERATOR.initials}</span>
+        <div>
+          <h2>{DESK_OPERATOR.name}</h2>
+          <p>
+            {DESK_OPERATOR.title} · {DESK_OPERATOR.company}
+          </p>
+        </div>
+      </section>
+      <div className="profile-grid">
+        <section className="profile-section panel">
+          <h2>Outreach identity</h2>
+          <p>From-line used on sequence drafts. Demo sends never email the lead.</p>
+          <dl>
+            <div>
+              <dt>From name</dt>
+              <dd>{DESK_OPERATOR.name}</dd>
+            </div>
+            <div>
+              <dt>From email</dt>
+              <dd>{data.mailStatus?.senderEmail || "info@jobersteadt.com"}</dd>
+            </div>
+            <div>
+              <dt>Company</dt>
+              <dd>{DESK_OPERATOR.company}</dd>
+            </div>
+            <div>
+              <dt>Send mode</dt>
+              <dd>{modeLabel}</dd>
+            </div>
+          </dl>
+        </section>
+        <section className="profile-section panel">
+          <h2>Demo recipient</h2>
+          <p>
+            Manual “Send demo” delivers to the team inbox ({data.teamInbox}) — not the speaker.
+          </p>
+          <dl>
+            <div>
+              <dt>Team inbox</dt>
+              <dd>{data.teamInbox}</dd>
+            </div>
+            <div>
+              <dt>SMTP host</dt>
+              <dd>{mail?.smtpHost || "—"}</dd>
+            </div>
+            <div>
+              <dt>SMTP ready</dt>
+              <dd>{mail?.smtpConfigured ? "Yes" : "No"}</dd>
+            </div>
+          </dl>
+        </section>
+        <section className="profile-section panel">
+          <h2>Research preferences</h2>
+          <dl>
+            <div>
+              <dt>Primary focus</dt>
+              <dd>{DESK_OPERATOR.focus}</dd>
+            </div>
+            <div>
+              <dt>Markets</dt>
+              <dd>{DESK_OPERATOR.markets}</dd>
+            </div>
+            <div>
+              <dt>Minimum signal score</dt>
+              <dd>{DESK_OPERATOR.minScore}</dd>
+            </div>
+          </dl>
+        </section>
+        <section className="profile-section panel">
+          <h2>Notifications</h2>
+          <div className="preference-row">
+            <span>
+              <strong>New high-signal people</strong>
+              <small>When Agent 2 qualifies ICP speakers</small>
+            </span>
+            <i className="preference-enabled" aria-label="Enabled" />
+          </div>
+          <div className="preference-row">
+            <span>
+              <strong>Agent review queue</strong>
+              <small>Pipeline health and failed runs</small>
+            </span>
+            <i className="preference-enabled" aria-label="Enabled" />
+          </div>
+        </section>
+      </div>
+    </div>
+  );
 }
 
 function EventDrawer({ conference, speakers, onClose, onOpenSpeaker }: { conference: Conference; speakers: DeskLead[]; onClose: () => void; onOpenSpeaker: (id: string) => void }) {

@@ -2,22 +2,24 @@
 
 import { LoaderCircle, Send, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { SequenceDraft, Speaker } from "@/lib/contracts";
-
-type MailStatus = {
-  canSendDemo?: boolean;
-  draftOnly?: boolean;
-  teamInbox?: string | null;
-  sendMode?: string;
-};
+import type { SequenceDraft, SequenceStep, Speaker } from "@/lib/contracts";
+import { resolveTeamInbox, type MailStatus } from "@/lib/desk-profile";
 
 export function DraftReviewModal({
   speaker,
   draft,
+  drafts = [],
+  activeAnchor,
+  onSelectAnchor,
+  teamInbox: teamInboxProp,
   onClose,
 }: {
   speaker: Speaker;
   draft: SequenceDraft | null;
+  drafts?: SequenceDraft[];
+  activeAnchor?: SequenceStep["anchor"];
+  onSelectAnchor?: (anchor: SequenceStep["anchor"]) => void;
+  teamInbox?: string;
   onClose: () => void;
 }) {
   const subject =
@@ -25,7 +27,7 @@ export function DraftReviewModal({
     `Quick note ahead of ${speaker.conference}`;
   const body =
     draft?.body ??
-    `Hi ${speaker.name.split(" ")[0]},\n\nYour session on ${speaker.session?.toLowerCase() ?? "the agenda"} caught my eye. Would love to connect around the event.\n\nBest,\nAlex`;
+    `Hi ${speaker.name.split(" ")[0]},\n\nYour session on ${speaker.session?.toLowerCase() ?? "the agenda"} caught my eye. Would love to connect around the event.\n\nBest,\nKirill`;
   const grounded =
     draft?.groundedOn?.length
       ? draft.groundedOn.join(" · ")
@@ -54,7 +56,7 @@ export function DraftReviewModal({
   }, []);
 
   const canSendDemo = Boolean(mail?.canSendDemo);
-  const teamInbox = mail?.teamInbox || "team inbox";
+  const teamInbox = teamInboxProp || resolveTeamInbox(mail);
 
   async function sendDemoToTeam() {
     setSending(true);
@@ -113,13 +115,36 @@ export function DraftReviewModal({
               {draft
                 ? `${draft.generatedBy === "openai" ? "OpenAI" : "Template"} · ${draft.anchor}`
                 : "Template preview"}{" "}
-              · draft only — no automatic sending
+              · pick one email · send manually
             </small>
           </div>
           <button type="button" onClick={onClose} aria-label="Close">
             <X size={18} />
           </button>
         </header>
+
+        {drafts.length > 1 && onSelectAnchor ? (
+          <div className="draft-anchor-picker" role="tablist" aria-label="Choose sequence email">
+            {drafts.map((item) => (
+              <button
+                key={item.anchor}
+                type="button"
+                role="tab"
+                aria-selected={
+                  (activeAnchor ?? draft?.anchor) === item.anchor
+                }
+                className={
+                  (activeAnchor ?? draft?.anchor) === item.anchor
+                    ? "draft-anchor-active"
+                    : ""
+                }
+                onClick={() => onSelectAnchor(item.anchor)}
+              >
+                {item.anchor}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         <div className="draft-modal-meta">
           <span>
@@ -159,7 +184,7 @@ export function DraftReviewModal({
                 onClick={() => void sendDemoToTeam()}
               >
                 {sending ? <LoaderCircle size={14} className="spin" /> : <Send size={14} />}
-                Send demo to team
+                Send to {teamInbox}
               </button>
             ) : (
               <strong>Draft only — no automatic sending</strong>

@@ -20,6 +20,21 @@ import type {
   Speaker,
 } from "@/lib/contracts";
 import { computeFunnel, nextLeadStatus } from "@/lib/pipeline/funnel";
+import {
+  DEFAULT_DEMO_INBOX,
+  resolveTeamInbox,
+  type MailStatus,
+} from "@/lib/desk-profile";
+
+function stampDemoRecipientEmail(
+  leads: DeskLead[],
+  teamInbox: string,
+): DeskLead[] {
+  return leads.map((lead) => ({
+    ...lead,
+    email: lead.email ?? teamInbox,
+  }));
+}
 
 export type AgentHealthDot = {
   service: string;
@@ -143,9 +158,10 @@ function applyQualifyPayload(
     setSelectedConferenceId: (id: string | null) => void;
     setSelectedId: (id: string) => void;
   },
-  options: { postEvents?: boolean } = {},
+  options: { postEvents?: boolean; teamInbox?: string } = {},
 ) {
-  setters.setLeads(payload.leads);
+  const inbox = options.teamInbox?.trim() || DEFAULT_DEMO_INBOX;
+  setters.setLeads(stampDemoRecipientEmail(payload.leads, inbox));
   setters.setStats(payload.stats);
   setters.setQualifyConference(payload.conference);
 
@@ -220,6 +236,9 @@ export type SignalDataValue = {
   sequenceLoading: boolean;
   systemHealth: SystemHealth;
   bootstrapped: boolean;
+  /** Demo send destination (TEST_TO_EMAIL). */
+  teamInbox: string;
+  mailStatus: MailStatus | null;
 };
 
 const SignalDataContext = createContext<SignalDataValue | null>(null);
@@ -261,6 +280,8 @@ function useSignalDataState(): SignalDataValue {
 
   const [apiFunnel, setApiFunnel] = useState<Funnel | null>(null);
   const [funnelSource, setFunnelSource] = useState<"api" | "local">("local");
+  const [mailStatus, setMailStatus] = useState<MailStatus | null>(null);
+  const teamInbox = resolveTeamInbox(mailStatus);
 
   const selectedConference = useMemo(
     () =>
@@ -378,13 +399,41 @@ function useSignalDataState(): SignalDataValue {
       }
     }
 
+    async function refreshMail() {
+      try {
+        const response = await fetch("/api/mail/status", { cache: "no-store" });
+        const payload = (await response.json()) as MailStatus;
+        if (!cancelled) setMailStatus(payload);
+      } catch {
+        if (!cancelled) {
+          setMailStatus({
+            canSendDemo: false,
+            draftOnly: true,
+            sendMode: "mock",
+            teamInbox: null,
+          });
+        }
+      }
+    }
+
     void refreshHealth();
+    void refreshMail();
     const timer = window.setInterval(refreshHealth, 15_000);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
     };
   }, []);
+
+  useEffect(() => {
+    const inbox = teamInbox;
+    setLeads((prev) => {
+      if (!prev.length) return prev;
+      const needsStamp = prev.some((lead) => !lead.email);
+      if (!needsStamp) return prev;
+      return stampDemoRecipientEmail(prev, inbox);
+    });
+  }, [teamInbox]);
 
   useEffect(() => {
     let cancelled = false;
@@ -497,7 +546,7 @@ function useSignalDataState(): SignalDataValue {
         setConferences,
         setSelectedConferenceId,
         setSelectedId,
-      }, { postEvents: true });
+      }, { postEvents: true, teamInbox });
 
       const degradedNote = payload.degraded
         ? " Agent 2 unreachable — scored with embedded fallback."
@@ -522,7 +571,7 @@ function useSignalDataState(): SignalDataValue {
       setPipelineIndex(4);
       setIsAnalyzing(false);
     }
-  }, [url, refreshFunnel]);
+  }, [url, refreshFunnel, teamInbox]);
 
   const previewCrawl = useCallback(async () => {
     setError(null);
@@ -753,6 +802,8 @@ function useSignalDataState(): SignalDataValue {
     sequenceLoading,
     systemHealth,
     bootstrapped,
+    teamInbox,
+    mailStatus,
   };
 }
 

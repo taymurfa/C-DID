@@ -23,6 +23,8 @@ export const SpeakerSchema = z.object({
   company: z.string().nullable(),
   conference: z.string(),
   session: z.string().nullable(),
+  /** Demo outbound target (team inbox). Never a scraped personal address. */
+  email: z.string().email().nullable().optional(),
   score: z.number().min(0).max(100),
   tier: z.enum(["A", "B", "C", "D"]),
   scoreReason: z.string(),
