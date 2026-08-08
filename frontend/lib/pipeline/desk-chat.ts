@@ -67,19 +67,20 @@ export async function answerDeskChat(
   const system = buildDeskChatSystemPrompt(context);
   // Keep recent turns only; the latest user message is always included.
   const recent = messages.slice(-12);
-  const answer = await chatText(system, recent);
-  if (!answer) {
+  const result = await chatText(system, recent);
+  if (!result.text) {
+    const detail = result.error ? ` (${result.error})` : "";
     return {
       enabled: true,
       model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
       answer:
-        "I couldn't reach OpenAI just now. Try again in a moment, or check Speakers / Funnel for the raw desk data.",
+        `I couldn't reach OpenAI just now${detail}. Try again in a moment, or check Speakers / Funnel for the raw desk data.`,
     };
   }
 
   return {
     enabled: true,
     model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-    answer,
+    answer: result.text,
   };
 }

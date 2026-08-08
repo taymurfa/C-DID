@@ -52,9 +52,9 @@ export async function chatText(
   system: string,
   messages: ChatTurn[],
   options?: { temperature?: number },
-): Promise<string | null> {
+): Promise<{ text: string | null; error?: string }> {
   const openai = getClient();
-  if (!openai) return null;
+  if (!openai) return { text: null, error: "OpenAI client not configured" };
   const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
   try {
     const completion = await openai.chat.completions.create({
@@ -63,8 +63,12 @@ export async function chatText(
       messages: [{ role: "system", content: system }, ...messages],
     });
     const content = completion.choices[0]?.message?.content?.trim();
-    return content || null;
-  } catch {
-    return null;
+    if (!content) return { text: null, error: "Empty model response" };
+    return { text: content };
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Unknown OpenAI error";
+    console.error("[openai.chatText]", message);
+    return { text: null, error: message };
   }
 }
