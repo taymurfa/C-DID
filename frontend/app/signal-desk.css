@@ -157,6 +157,15 @@ html.dark .app-shell {
 .panel { overflow: hidden; border: 1px solid var(--sig-line-soft); border-radius: 14px; background: var(--sig-surface); box-shadow: var(--sig-shadow); backdrop-filter: saturate(180%) blur(16px); scroll-margin-top: 12px; }
 .panel-heading { display: flex; min-height: 54px; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--sig-line-soft); padding: 0 16px; }
 .panel-heading h2 { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: -0.015em; }
+.panel-heading h2 { min-width: 0; }
+.panel-heading-meta {
+  margin-left: auto;
+  color: var(--sig-secondary);
+  font-size: 11px;
+  font-weight: 550;
+  text-align: right;
+  white-space: nowrap;
+}
 .panel-heading button, .panel-footer button { display: inline-flex; min-height: 36px; align-items: center; gap: 2px; border: 0; background: transparent; padding: 0; color: var(--sig-accent); cursor: pointer; font-size: 12px; font-weight: 550; }
 .panel-heading button:hover, .panel-footer button:hover { text-decoration: underline; text-underline-offset: 3px; }
 
@@ -451,6 +460,8 @@ html.dark .app-shell {
 .atlas-signal-menu { position: absolute; top: calc(100% + 9px); left: 0; display: grid; min-width: 168px; gap: 2px; border: 1px solid rgba(255,255,255,.16); border-radius: 12px; background: rgba(17,20,20,.94); padding: 5px; box-shadow: 0 14px 34px rgba(0,0,0,.28); backdrop-filter: blur(16px); }
 .atlas-view-toggle .atlas-signal-menu button { justify-content: flex-start; min-height: 34px; border-radius: 8px; padding: 0 10px; color: rgba(255,255,255,.76); font-weight: 550; }
 .atlas-view-toggle .atlas-signal-menu button:hover, .atlas-view-toggle .atlas-signal-menu button.atlas-menu-active { background: rgba(255,255,255,.14); color: #fff; }
+.atlas-theme-toggle { position: fixed; z-index: 100; top: max(14px, env(safe-area-inset-top)); right: max(18px, env(safe-area-inset-right)); display: inline-flex; min-height: 42px; align-items: center; gap: 8px; border: 1px solid var(--sig-line); border-radius: 999px; background: var(--sig-surface); padding: 0 14px; color: var(--sig-text); box-shadow: var(--sig-shadow); backdrop-filter: blur(16px); font-size: 12px; font-weight: 650; line-height: 1; cursor: pointer; transition: background 150ms ease, border-color 150ms ease, color 150ms ease; }
+.atlas-theme-toggle:hover { background: var(--sig-surface-solid); border-color: var(--sig-secondary); }
 
 /* Project Radar overlay (Track 1) */
 .radar-map-layout { position: relative; width: 100%; min-height: 100dvh; }
@@ -988,6 +999,39 @@ html.dark .app-shell {
   box-shadow: 0 0 0 3px var(--sig-accent-soft);
 }
 .sequences-grid { align-items: start; }
+.sequences-empty-grid {
+  max-width: 1120px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-height: calc(100dvh - 182px);
+  align-items: stretch;
+}
+.sequences-empty-grid > .panel {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+.sequences-empty-grid .sequence-index {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+.sequences-empty-grid .sequence-empty {
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+}
+.sequences-empty-grid .panel-heading {
+  min-height: 66px;
+  flex-wrap: wrap;
+  align-content: center;
+  gap: 2px 12px;
+  padding-block: 10px;
+}
+.sequences-empty-grid .panel-heading h2 { flex-basis: 100%; }
+.sequences-empty-grid .panel-heading-meta {
+  margin-left: 0;
+  text-align: left;
+}
 .sequence-index { display: grid; }
 .sequence-index-row {
   display: grid;
@@ -1018,6 +1062,19 @@ html.dark .app-shell {
   font-style: normal;
   font-weight: 650;
 }
+.sequence-empty {
+  display: grid;
+  min-height: 230px;
+  place-content: center;
+  justify-items: center;
+  gap: 9px;
+  padding: 28px;
+  color: var(--sig-secondary);
+  text-align: center;
+}
+.sequence-empty > svg { color: var(--sig-accent); }
+.sequence-empty strong { color: var(--sig-text); font-size: 14px; font-weight: 650; }
+.sequence-empty p { max-width: 300px; margin: 0; font-size: 12px; line-height: 1.5; }
 
 .companies-panel { overflow: hidden; }
 .company-head,
@@ -1401,6 +1458,27 @@ html.dark .app-shell {
   padding: 3px 2px;
   color: var(--sig-accent);
 }
+.calendar-empty-detail {
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+}
+.calendar-empty-detail > svg { color: var(--sig-accent); }
+.calendar-empty-detail h2 {
+  max-width: 290px;
+  margin: 8px auto 0;
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -.025em;
+}
+.calendar-empty-detail p {
+  max-width: 300px;
+  margin: 8px auto 0;
+  color: var(--sig-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
 .connections-toolbar {
   min-height: 58px;
   margin-bottom: 0;
@@ -1469,6 +1547,8 @@ html.dark .app-shell {
   .company-main .company-icp { display: none; }
   .calendar-split .calendar-board,
   .calendar-detail { min-height: 0; }
+  .sequences-empty-grid { max-width: 100%; min-height: 0; grid-template-columns: 1fr; }
+  .sequences-empty-grid > .panel { min-height: 340px; }
 }
 
 @media (max-width: 520px) {
@@ -1492,6 +1572,8 @@ html.dark .app-shell {
   .profile-section,
   .agent-meta { padding: 18px; }
   .agent-command { padding: 18px; }
+  .sequences-empty-grid { grid-template-columns: 1fr; }
+  .panel-heading-meta { max-width: 46%; overflow: hidden; text-overflow: ellipsis; }
 }
 
 /* Speaker detail: concise, centered review surface instead of a dense side sheet. */

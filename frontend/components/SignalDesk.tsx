@@ -144,7 +144,7 @@ function CalendarPage({ conferences, speakers, selectedConference, onSelectConfe
 
   return <div className="signal-page calendar-page">
     <div className="calendar-page-controls"><CalendarModeToggle calendarView={calendarView} onChange={setCalendarView} /></div>
-    {calendarView === "calendar" && selectedConference ? <div className="calendar-split"><CalendarGrid conferences={conferences} selectedConference={selectedConference} visibleMonth={visibleMonth} onMonthChange={setVisibleMonth} onSelectConference={selectEvent} /><EventDescription conference={selectedConference} speakers={speakers} onOpen={() => onOpenConference(selectedConference)} /></div> : null}
+    {calendarView === "calendar" ? <div className="calendar-split"><CalendarGrid conferences={conferences} selectedConference={selectedConference} visibleMonth={visibleMonth} onMonthChange={setVisibleMonth} onSelectConference={selectEvent} />{selectedConference ? <EventDescription conference={selectedConference} speakers={speakers} onOpen={() => onOpenConference(selectedConference)} /> : <CalendarEmptyDetail />}</div> : null}
     {calendarView === "list" ? <div className="calendar-list-view"><EventList conferences={conferences} speakers={speakers} onSelectConference={onOpenConference} /></div> : null}
   </div>;
 }
@@ -153,7 +153,7 @@ function CalendarModeToggle({ calendarView, onChange }: { calendarView: "calenda
   return <div className="calendar-view-toggle" role="group" aria-label="Calendar display"><button className={calendarView === "calendar" ? "calendar-view-active" : ""} onClick={() => onChange("calendar")} aria-pressed={calendarView === "calendar"}><CalendarDays size={15} /><span>Calendar</span></button><button className={calendarView === "list" ? "calendar-view-active" : ""} onClick={() => onChange("list")} aria-pressed={calendarView === "list"}><List size={15} /><span>List</span></button></div>;
 }
 
-function CalendarGrid({ conferences, selectedConference, visibleMonth, onMonthChange, onSelectConference }: { conferences: Conference[]; selectedConference: Conference; visibleMonth: string; onMonthChange: (month: string) => void; onSelectConference: (conference: Conference) => void }) {
+function CalendarGrid({ conferences, selectedConference, visibleMonth, onMonthChange, onSelectConference }: { conferences: Conference[]; selectedConference: Conference | null; visibleMonth: string; onMonthChange: (month: string) => void; onSelectConference: (conference: Conference) => void }) {
   function shiftMonth(offset: number) {
     const [year, month] = visibleMonth.split("-").map(Number);
     const next = new Date(Date.UTC(year, month - 1 + offset, 1));
@@ -170,9 +170,13 @@ function CalendarGrid({ conferences, selectedConference, visibleMonth, onMonthCh
         const day = new Date(conference.startDate).getUTCDate();
         events.set(day, [...(events.get(day) ?? []), conference]);
       });
-      return <section className="month-calendar" key={key}><div className="calendar-month-heading"><div className="month-navigation"><button onClick={() => shiftMonth(-1)} aria-label="Previous month"><ChevronLeft size={16} /></button><h3>{new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date(Date.UTC(year, monthIndex - 1, 1)))}</h3><button onClick={() => shiftMonth(1)} aria-label="Next month"><ChevronRight size={16} /></button></div></div><div className="calendar-weekdays" aria-hidden="true">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => <span key={day}>{day}</span>)}</div><div className="calendar-days">{Array.from({ length: firstDay }, (_, index) => <span className="calendar-empty" key={`empty-${index}`} />)}{Array.from({ length: daysInMonth }, (_, index) => { const day = index + 1; const dayEvents = events.get(day) ?? []; return <div className={dayEvents.length ? "calendar-day calendar-day-event" : "calendar-day"} key={day}><span>{day}</span>{dayEvents.map((conference) => <button className={conference.id === selectedConference.id ? "calendar-event-selected" : ""} key={conference.id} onClick={() => onSelectConference(conference)} aria-pressed={conference.id === selectedConference.id}><i className={`status-${conference.status.toLowerCase()}`} />{conference.name}</button>)}</div>; })}</div></section>;
+      return <section className="month-calendar" key={key}><div className="calendar-month-heading"><div className="month-navigation"><button onClick={() => shiftMonth(-1)} aria-label="Previous month"><ChevronLeft size={16} /></button><h3>{new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date(Date.UTC(year, monthIndex - 1, 1)))}</h3><button onClick={() => shiftMonth(1)} aria-label="Next month"><ChevronRight size={16} /></button></div></div><div className="calendar-weekdays" aria-hidden="true">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => <span key={day}>{day}</span>)}</div><div className="calendar-days">{Array.from({ length: firstDay }, (_, index) => <span className="calendar-empty" key={`empty-${index}`} />)}{Array.from({ length: daysInMonth }, (_, index) => { const day = index + 1; const dayEvents = events.get(day) ?? []; return <div className={dayEvents.length ? "calendar-day calendar-day-event" : "calendar-day"} key={day}><span>{day}</span>{dayEvents.map((conference) => <button className={conference.id === selectedConference?.id ? "calendar-event-selected" : ""} key={conference.id} onClick={() => onSelectConference(conference)} aria-pressed={conference.id === selectedConference?.id}><i className={`status-${conference.status.toLowerCase()}`} />{conference.name}</button>)}</div>; })}</div></section>;
     })}
   </section>;
+}
+
+function CalendarEmptyDetail() {
+  return <aside className="calendar-detail calendar-empty-detail panel" aria-live="polite"><CalendarDays size={24} /><div><span className="mini-label">No events loaded</span><h2>Your event details will appear here.</h2><p>Run a conference scan from Agent to populate this calendar.</p></div></aside>;
 }
 
 function EventDescription({ conference, speakers, onOpen }: { conference: Conference; speakers: DeskLead[]; onOpen: () => void }) {

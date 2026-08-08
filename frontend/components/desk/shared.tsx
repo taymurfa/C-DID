@@ -81,7 +81,7 @@ export function PanelHeader({
           <ChevronRight size={15} />
         </button>
       ) : (
-        <span>{action}</span>
+        <span className="panel-heading-meta">{action}</span>
       )}
     </header>
   );
