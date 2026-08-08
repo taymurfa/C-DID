@@ -156,17 +156,17 @@ button{font-family:inherit;color:inherit;}
 .seg button.on{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.12), 0 0 0 0.5px rgba(0,0,0,.04);font-weight:590;}
 .spacer{flex:1;}
 
-.search{position:relative;}
+.search{position:relative;z-index:4;margin:10px 10px 4px;flex:none;}
 .search input{
-  width:236px;background:var(--fill);border:none;border-radius:9px;
+  width:100%;background:var(--fill);border:none;border-radius:9px;
   padding:8px 11px 8px 30px;color:var(--ink);font-size:13px;font-family:inherit;outline:none;
-  transition:width .2s ease, box-shadow .15s ease;
+  transition:box-shadow .15s ease;
 }
-.search input:focus{box-shadow:0 0 0 3.5px color-mix(in srgb, var(--accent) 22%, transparent);width:300px;}
+.search input:focus{box-shadow:0 0 0 3.5px color-mix(in srgb, var(--accent) 22%, transparent);}
 .search input::placeholder{color:var(--ink-3);}
 .search svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--ink-3);pointer-events:none;}
 .results{
-  position:absolute;top:40px;left:0;width:352px;max-height:340px;overflow-y:auto;z-index:60;
+  position:absolute;top:40px;left:0;width:100%;max-height:340px;overflow-y:auto;z-index:60;
   background:var(--surface);border:1px solid var(--hairline-soft);border-radius:12px;
   box-shadow:var(--shadow-2);padding:5px;
 }
@@ -317,30 +317,15 @@ svg text.val{fill:var(--ink-2);font-family:var(--mono);}
 </style>
 
 <div id="app">
-  <div class="topbar">
-    <div class="brand">
-      <div class="brand-mark"></div>
-      <div>
-        <div class="brand-t">ERCOT Power Project Atlas</div>
-        <div class="brand-s" id="brandsub">&mdash;</div>
-      </div>
-    </div>
-    <div class="seg" role="tablist">
-      <button id="tab-map" class="on" role="tab">Map</button>
-      <button id="tab-out" role="tab">Outlook</button>
-    </div>
-    <div class="spacer"></div>
-    <div class="search">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      <input id="q" type="search" placeholder="Search project, owner, county&hellip;" autocomplete="off">
-      <div id="results" class="results" hidden></div>
-    </div>
-  </div>
-
   <div class="view" id="mapview">
     <div id="mapwrap"><canvas id="cv"></canvas></div>
 
     <div class="panel p-left">
+      <div class="search">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="q" type="search" placeholder="Search projects&hellip;" autocomplete="off">
+        <div id="results" class="results" hidden></div>
+      </div>
       <div class="phead"><span class="ptitle">Fuel type</span><span class="ptitle sub" id="mwtot"></span></div>
       <div class="pbody" style="padding-top:6px;">
         <div id="legend"></div>
@@ -364,7 +349,6 @@ svg text.val{fill:var(--ink-2);font-family:var(--mono);}
     <div class="p-bottom" id="stats"></div>
   </div>
 
-  <div class="view" id="outlook" hidden></div>
 </div>
 <div id="tip"></div>
 
@@ -989,27 +973,11 @@ function renderWeights() {
   };
 }
 
-/* ============ tabs ============ */
-const tabMap = document.getElementById('tab-map'), tabOut = document.getElementById('tab-out');
-function showTab(which) {
-  const isMap = which === 'map';
-  document.getElementById('mapview').hidden = !isMap;
-  document.getElementById('outlook').hidden = isMap;
-  tabMap.classList.toggle('on', isMap); tabOut.classList.toggle('on', !isMap);
-  document.getElementById('tip').classList.remove('on');
-  if (isMap) { resize(); } else { renderOutlook(); }
-}
-tabMap.onclick = () => showTab('map');
-tabOut.onclick = () => showTab('outlook');
-
 /* ============ boot ============ */
-document.getElementById('brandsub').textContent =
-  DATA.meta.queue_n.toLocaleString() + ' queued \u00B7 ' + DATA.meta.operating_n.toLocaleString() + ' operating \u00B7 ERCOT';
-window.addEventListener('resize', () => { if (!document.getElementById('mapview').hidden) resize(); });
+window.addEventListener('resize', resize);
 function onThemeChange() {
   refreshTheme();
   draw();
-  if (!document.getElementById('outlook').hidden) renderOutlook();
 }
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', onThemeChange);
 new MutationObserver(onThemeChange).observe(document.documentElement, { attributeFilter:['data-theme'] });
