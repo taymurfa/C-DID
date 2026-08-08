@@ -14,6 +14,7 @@ import {
   Link2,
   LoaderCircle,
   Menu,
+  MessageSquareText,
   Play,
   Radar,
   Search,
@@ -39,6 +40,7 @@ type NavItem = { label: string; icon: LucideIcon; path: string };
 
 const NAV: NavItem[] = [
   { label: "Overview", icon: Activity, path: "/" },
+  { label: "Ask", icon: MessageSquareText, path: "/ask" },
   { label: "Conferences", icon: CalendarDays, path: "/conferences" },
   { label: "Speakers", icon: UserRound, path: "/speakers" },
   { label: "Companies", icon: Building2, path: "/companies" },

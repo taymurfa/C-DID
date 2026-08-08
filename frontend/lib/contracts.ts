@@ -211,3 +211,90 @@ export type SequenceRequest = z.infer<typeof SequenceRequestSchema>;
 export type SequenceResponse = z.infer<typeof SequenceResponseSchema>;
 export type Funnel = z.infer<typeof FunnelSchema>;
 export type FunnelStage = z.infer<typeof FunnelStageSchema>;
+
+// --- Desk Q&A chatbot (grounded on live Signal Desk snapshot) ---
+
+export const ChatMessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().min(1).max(8000),
+});
+
+export const ChatLeadContextSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  title: z.string().nullable().optional(),
+  company: z.string().nullable().optional(),
+  conference: z.string().optional(),
+  session: z.string().nullable().optional(),
+  score: z.number().optional(),
+  tier: z.enum(["A", "B", "C", "D"]).optional(),
+  scoreReason: z.string().optional(),
+  topics: z.array(z.string()).optional(),
+  role: z.string().optional(),
+  status: z.string().optional(),
+  evidence: z
+    .array(z.object({ label: z.string(), excerpt: z.string() }))
+    .optional(),
+});
+
+export const ChatRequestSchema = z.object({
+  messages: z.array(ChatMessageSchema).min(1).max(24),
+  context: z.object({
+    conferences: z
+      .array(
+        z.object({
+          name: z.string(),
+          city: z.string().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          speakerCount: z.number().optional(),
+          qualifiedCount: z.number().optional(),
+          status: z.string().optional(),
+        }),
+      )
+      .max(40)
+      .default([]),
+    selectedConference: z.string().nullable().optional(),
+    leads: z.array(ChatLeadContextSchema).max(60).default([]),
+    funnel: FunnelSchema.nullable().optional(),
+    sequenceSteps: z
+      .array(
+        z.object({
+          anchor: z.string(),
+          label: z.string(),
+          status: z.string(),
+          subject: z.string().nullable().optional(),
+        }),
+      )
+      .max(12)
+      .optional(),
+    drafts: z
+      .array(
+        z.object({
+          anchor: z.string(),
+          subject: z.string(),
+          body: z.string().max(2000),
+        }),
+      )
+      .max(8)
+      .optional(),
+    stats: z
+      .object({
+        speakersIngested: z.number().optional(),
+        afterDedupe: z.number().optional(),
+        qualified: z.number().optional(),
+      })
+      .nullable()
+      .optional(),
+  }),
+});
+
+export const ChatResponseSchema = z.object({
+  answer: z.string(),
+  enabled: z.boolean(),
+  model: z.string().optional(),
+});
+
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;
+export type ChatRequest = z.infer<typeof ChatRequestSchema>;
+export type ChatResponse = z.infer<typeof ChatResponseSchema>;

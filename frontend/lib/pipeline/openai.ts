@@ -41,3 +41,30 @@ export async function chatJson(
     return null;
   }
 }
+
+export type ChatTurn = { role: "user" | "assistant"; content: string };
+
+/**
+ * Conversational text completion. Returns `null` when OpenAI is disabled or
+ * the request fails so the desk can show a clear fallback message.
+ */
+export async function chatText(
+  system: string,
+  messages: ChatTurn[],
+  options?: { temperature?: number },
+): Promise<string | null> {
+  const openai = getClient();
+  if (!openai) return null;
+  const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+  try {
+    const completion = await openai.chat.completions.create({
+      model,
+      temperature: options?.temperature ?? 0.35,
+      messages: [{ role: "system", content: system }, ...messages],
+    });
+    const content = completion.choices[0]?.message?.content?.trim();
+    return content || null;
+  } catch {
+    return null;
+  }
+}
