@@ -80,7 +80,8 @@ def run() -> None:
     store.events().delete_many({"source": "schedule_import"})
 
     events: list[dict] = []
-    with CSV_PATH.open(newline="") as f:
+    # utf-8-sig strips a BOM if present (common on Windows CSV exports).
+    with CSV_PATH.open(newline="", encoding="utf-8-sig") as f:
         for row in csv.DictReader(f):
             title = (row.get("session title") or "").strip()
             if not title:
@@ -131,7 +132,7 @@ def run() -> None:
     with_speakers = sum(1 for e in events if e["speakers"])
     print(
         f"Imported {len(events)} events ({with_speakers} with speakers, {total_speakers} speakers "
-        f"total) into '{store.db().name}'. All speaker emails → {TEST_TO_EMAIL}. "
+        f"total) into '{store.db().name}'. All speaker emails -> {TEST_TO_EMAIL}. "
         f"Sequences/emails cleared.",
         flush=True,
     )
