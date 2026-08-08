@@ -58,18 +58,44 @@ Next.js /api/analyze ─── URL safety gate
 
 The frontend uses the D-Branch project's Next.js 16, React 19, TypeScript, and Lucide foundation. `lib/contracts.ts` is the shared Zod boundary. `lib/firecrawl.ts` owns public page retrieval. `app/api/analyze/route.ts` validates URLs and prevents localhost/private-network targets before invoking Firecrawl. `supabase/schema.sql` defines provenance, normalized entities, sequences, funnel events, and agent-run persistence.
 
-## Scoring
+## Person 2 — qualification pipeline (`/api/qualify`)
 
-Overall score is transparent and additive:
+Person 2 turns Agent 1's noisy scraped data into accurate, explainable sales
+intelligence. Pipeline stages (all in `lib/pipeline/`):
 
-- role fit: 20
-- company fit: 20
-- session/topic relevance: 25
-- seniority: 15
-- buying influence: 10
-- event proximity: 10
+1. **Ingest** — accept an Agent 1 `IngestionResult` directly, fetch it from Agent
+   1 via a `conferenceUrl`, or use the bundled energy-conference demo payload
+   (`ingestion.ts`, `demo-ingestion.ts`).
+2. **Normalize** — clean names (strip honorifics/credentials, fix casing),
+   titles (expand VP/SVP/CEO, unify separators), and companies (`normalize.ts`).
+3. **Deduplicate** — merge the same speaker across pages by normalized
+   name + company key, unioning topics/sessions/evidence and keeping the richest
+   fields; roll up unique companies (`dedupe.ts`).
+4. **Score** — transparent, additive 0–100 across role fit (20), company fit
+   (20), topic relevance (25), seniority (15), buying influence (10), and event
+   proximity (10); assign tiers A/B/C/D (`score.ts`, `icp-config.ts`).
+5. **ICP fit + explanation** — OpenAI judges ICP fit and writes "why this person
+   matters", grounded only in the extracted facts; a deterministic fallback runs
+   when no `OPENAI_API_KEY` is set (`icp.ts`, `openai.ts`).
+6. **Rank** — filter to qualified tiers, sort by score, and emit ranked
+   `QualifiedLead`s with evidence, confidence, and score breakdown (`qualify.ts`).
 
-The UI stores the components, the reason, evidence URLs, and confidence. Unknown fields remain unknown; the live adapter does not infer employers, contact data, or unsupported claims.
+Request examples:
+
+```jsonc
+// Demo mode (no credentials)
+{ "demoMode": true }
+
+// From a raw Agent 1 payload
+{ "ingestion": { /* IngestionResult */ }, "minTier": "C" }
+
+// Let Person 2 call Agent 1 for you
+{ "conferenceUrl": "https://example.com/gridforward", "maxPages": 8 }
+```
+
+Every lead carries the additive score components, the reason, evidence URLs, and
+confidence. Unknown fields remain unknown; the pipeline never infers employers,
+contact data, or unsupported claims.
 
 ## Compliance and demo reliability
 
@@ -82,9 +108,9 @@ The UI stores the components, the reason, evidence URLs, and confidence. Unknown
 
 ## Next week
 
-1. Replace the single-page scrape with a bounded Firecrawl crawl over agenda, program, session, and speaker paths.
-2. Add OpenAI Structured Outputs at the extraction/scoring boundaries and persist every `AgentRun`.
-3. Implement deterministic normalization, fuzzy candidate retrieval, and reviewable ambiguous merges.
+1. Replace the single-page scrape with a bounded Firecrawl crawl over agenda, program, session, and speaker paths (Agent 1 already does this; wire `/api/qualify` to it in production).
+2. Persist every qualification `AgentRun` (inputs, model, leads) to Supabase.
+3. Extend dedupe with fuzzy candidate retrieval and reviewable ambiguous merges (exact normalized-key merge is implemented).
 4. Add Supabase auth/workspace policies and scheduled recurrence detection for annual conferences.
 5. Connect a compliant sending provider only after explicit human approval of every sequence.
 
