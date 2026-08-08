@@ -127,6 +127,73 @@ export const QualifyResponseSchema = z.object({
   leads: z.array(QualifiedLeadSchema),
 });
 
+// --- Person 3 (outreach engine) contracts ---
+
+/** Funnel progression (distinct from sequence-anchor `Speaker.outreachStage`). */
+export const LeadStatusSchema = z.enum([
+  "identified",
+  "contacted",
+  "replied",
+  "meeting",
+  "met",
+  "follow-up",
+  "booked",
+]);
+
+export const SequenceDraftSchema = z.object({
+  anchor: z.enum(["T-14", "T-7", "T-2", "Event", "T+2"]),
+  subject: z.string(),
+  body: z.string(),
+  groundedOn: z.array(z.string()),
+  generatedBy: z.enum(["openai", "template"]),
+});
+
+export const SequenceConferenceSchema = z.object({
+  name: z.string().nullable(),
+  startDate: z.string().min(1),
+  endDate: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
+  websiteUrl: z.string().optional(),
+});
+
+/** Accept full QualifiedLead or a Speaker-shaped lead (seed / demo UI). */
+export const SequenceLeadSchema = QualifiedLeadSchema.or(
+  SpeakerSchema.extend({
+    topics: z.array(z.string()).optional(),
+  }),
+);
+
+export const SequenceRequestSchema = z.object({
+  lead: SequenceLeadSchema,
+  conference: SequenceConferenceSchema,
+  now: z.iso.datetime().optional(),
+});
+
+export const SequenceResponseSchema = z.object({
+  steps: z.array(SequenceStepSchema),
+  drafts: z.array(SequenceDraftSchema),
+});
+
+export const FunnelStageSchema = z.object({
+  stage: LeadStatusSchema,
+  label: z.string(),
+  count: z.number().int().nonnegative(),
+  conversionFromPrior: z.number().nullable(),
+});
+
+export const FunnelSchema = z.object({
+  stages: z.array(FunnelStageSchema),
+  dropOff: z
+    .object({
+      from: LeadStatusSchema,
+      to: LeadStatusSchema,
+      fromLabel: z.string(),
+      toLabel: z.string(),
+      lost: z.number().int().nonnegative(),
+    })
+    .nullable(),
+});
+
 export type Speaker = z.infer<typeof SpeakerSchema>;
 export type Conference = z.infer<typeof ConferenceSchema>;
 export type SequenceStep = z.infer<typeof SequenceStepSchema>;
@@ -135,3 +202,10 @@ export type Evidence = z.infer<typeof EvidenceSchema>;
 export type ScoreBreakdown = z.infer<typeof ScoreBreakdownSchema>;
 export type QualifiedLead = z.infer<typeof QualifiedLeadSchema>;
 export type QualifyResponse = z.infer<typeof QualifyResponseSchema>;
+export type LeadStatus = z.infer<typeof LeadStatusSchema>;
+export type SequenceDraft = z.infer<typeof SequenceDraftSchema>;
+export type SequenceConference = z.infer<typeof SequenceConferenceSchema>;
+export type SequenceRequest = z.infer<typeof SequenceRequestSchema>;
+export type SequenceResponse = z.infer<typeof SequenceResponseSchema>;
+export type Funnel = z.infer<typeof FunnelSchema>;
+export type FunnelStage = z.infer<typeof FunnelStageSchema>;
