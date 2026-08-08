@@ -35,16 +35,16 @@
 }
 
 html.dark .app-shell {
-  --sig-bg: #000;
-  --sig-surface: rgba(28, 28, 30, 0.76);
-  --sig-surface-solid: #1c1c1e;
-  --sig-fill: #2c2c2e;
-  --sig-fill-strong: #3a3a3c;
-  --sig-line: rgba(255, 255, 255, 0.16);
-  --sig-line-soft: rgba(255, 255, 255, 0.09);
-  --sig-text: #fff;
-  --sig-secondary: rgba(235, 235, 245, 0.68);
-  --sig-tertiary: rgba(235, 235, 245, 0.45);
+  --sig-bg: #141b24;
+  --sig-surface: rgba(29, 38, 50, 0.8);
+  --sig-surface-solid: #1d2632;
+  --sig-fill: #273240;
+  --sig-fill-strong: #344152;
+  --sig-line: rgba(226, 235, 245, 0.16);
+  --sig-line-soft: rgba(226, 235, 245, 0.1);
+  --sig-text: #e9eef5;
+  --sig-secondary: rgba(220, 229, 240, 0.72);
+  --sig-tertiary: rgba(220, 229, 240, 0.5);
   --sig-accent: #0a84ff;
   --sig-accent-soft: rgba(10, 132, 255, 0.2);
   --sig-positive: #54c571;
