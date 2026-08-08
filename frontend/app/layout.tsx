@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Montserrat, Poppins } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { ThemePreference } from "@/components/ThemePreference";
@@ -16,23 +16,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-/** SelectQuote marketing site uses Montserrat (body) and Poppins (headlines). */
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const poppins = Poppins({
-  variable: "--font-poppins",
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
-});
-
 export const metadata: Metadata = {
-  title: "SelectQuote OKR Management",
-  description:
-    "Internal OKR portal for SelectQuote Insurance Services. Align objectives across teams that help customers find the right coverage.",
+  title: "ERCOT Power Project Atlas",
+  description: "An interactive atlas of ERCOT power projects.",
 };
 
 export const viewport: Viewport = {
@@ -59,7 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable} ${poppins.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <script
           dangerouslySetInnerHTML={{

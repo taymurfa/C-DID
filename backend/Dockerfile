@@ -3,10 +3,8 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+# ponytail: no gcc — every requirement ships a manylinux wheel (psycopg[binary],
+# Pillow, cryptography). Re-add apt-get if a future dep needs to build from source.
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
