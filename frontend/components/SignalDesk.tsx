@@ -6,6 +6,7 @@ import {
   Check,
   CheckCircle2,
   ChevronRight,
+  ChevronLeft,
   CircleDot,
   Clock3,
   Code2,
@@ -112,7 +113,6 @@ function SignalDeskInner({ activePage: controlledPage, onPageChange }: { activeP
       <section className="workspace" aria-label="Signal Desk workspace">
         <header className="workspace-header">
           <div><h1>{pageLabels[activePage]}</h1></div>
-          {activePage === "calendar" ? <button className="header-action" onClick={() => navigate("agent")}><Sparkles size={16} />Analyze an event</button> : null}
           {activePage === "connections" ? <span className="header-count"><UsersRound size={16} />{data.filteredLeads.length} people</span> : null}
           {activePage === "companies" ? <span className="header-count"><UsersRound size={16} />{data.filteredLeads.length} people mapped</span> : null}
           {activePage === "sequences" ? <span className="header-count"><Sparkles size={16} />{data.activeSequences} active</span> : null}
@@ -135,9 +135,17 @@ function SignalDeskInner({ activePage: controlledPage, onPageChange }: { activeP
 
 function CalendarPage({ conferences, speakers, selectedConference, onSelectConference, onOpenConference }: { conferences: Conference[]; speakers: DeskLead[]; selectedConference: Conference | null; onSelectConference: (conference: Conference) => void; onOpenConference: (conference: Conference) => void }) {
   const [calendarView, setCalendarView] = useState<"calendar" | "list">("calendar");
+  const [visibleMonth, setVisibleMonth] = useState(() => selectedConference?.startDate.slice(0, 7) ?? new Date().toISOString().slice(0, 7));
+
+  function selectEvent(conference: Conference) {
+    setVisibleMonth(conference.startDate.slice(0, 7));
+    onSelectConference(conference);
+  }
+
   return <div className="signal-page calendar-page">
-    {calendarView === "calendar" && selectedConference ? <div className="calendar-split"><CalendarGrid conferences={conferences} selectedConference={selectedConference} calendarView={calendarView} onCalendarViewChange={setCalendarView} onSelectConference={onSelectConference} /><EventDescription conference={selectedConference} speakers={speakers} onOpen={() => onOpenConference(selectedConference)} /></div> : null}
-    {calendarView === "list" ? <div className="calendar-list-view"><CalendarModeToggle calendarView={calendarView} onChange={setCalendarView} /><EventList conferences={conferences} speakers={speakers} onSelectConference={onOpenConference} /></div> : null}
+    <div className="calendar-page-controls"><CalendarModeToggle calendarView={calendarView} onChange={setCalendarView} /></div>
+    {calendarView === "calendar" && selectedConference ? <div className="calendar-split"><CalendarGrid conferences={conferences} selectedConference={selectedConference} visibleMonth={visibleMonth} onMonthChange={setVisibleMonth} onSelectConference={selectEvent} /><EventDescription conference={selectedConference} speakers={speakers} onOpen={() => onOpenConference(selectedConference)} /></div> : null}
+    {calendarView === "list" ? <div className="calendar-list-view"><EventList conferences={conferences} speakers={speakers} onSelectConference={onOpenConference} /></div> : null}
   </div>;
 }
 
@@ -145,15 +153,24 @@ function CalendarModeToggle({ calendarView, onChange }: { calendarView: "calenda
   return <div className="calendar-view-toggle" role="group" aria-label="Calendar display"><button className={calendarView === "calendar" ? "calendar-view-active" : ""} onClick={() => onChange("calendar")} aria-pressed={calendarView === "calendar"}><CalendarDays size={15} /><span>Calendar</span></button><button className={calendarView === "list" ? "calendar-view-active" : ""} onClick={() => onChange("list")} aria-pressed={calendarView === "list"}><List size={15} /><span>List</span></button></div>;
 }
 
-function CalendarGrid({ conferences, selectedConference, calendarView, onCalendarViewChange, onSelectConference }: { conferences: Conference[]; selectedConference: Conference; calendarView: "calendar" | "list"; onCalendarViewChange: (view: "calendar" | "list") => void; onSelectConference: (conference: Conference) => void }) {
-  const monthKey = selectedConference.startDate.slice(0, 7);
+function CalendarGrid({ conferences, selectedConference, visibleMonth, onMonthChange, onSelectConference }: { conferences: Conference[]; selectedConference: Conference; visibleMonth: string; onMonthChange: (month: string) => void; onSelectConference: (conference: Conference) => void }) {
+  function shiftMonth(offset: number) {
+    const [year, month] = visibleMonth.split("-").map(Number);
+    const next = new Date(Date.UTC(year, month - 1 + offset, 1));
+    onMonthChange(next.toISOString().slice(0, 7));
+  }
+
   return <section className="calendar-board panel" aria-label="Event calendar">
-    {[monthKey].map((key) => {
+    {[visibleMonth].map((key) => {
       const [year, monthIndex] = key.split("-").map(Number);
       const firstDay = new Date(Date.UTC(year, monthIndex - 1, 1)).getUTCDay();
       const daysInMonth = new Date(Date.UTC(year, monthIndex, 0)).getUTCDate();
-      const events = new Map(conferences.filter((conference) => conference.startDate.startsWith(key)).map((conference) => [new Date(conference.startDate).getUTCDate(), conference]));
-      return <section className="month-calendar" key={key}><div className="calendar-month-heading"><h3>{new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date(Date.UTC(year, monthIndex - 1, 1)))}</h3><CalendarModeToggle calendarView={calendarView} onChange={onCalendarViewChange} /></div><div className="calendar-weekdays" aria-hidden="true">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => <span key={day}>{day}</span>)}</div><div className="calendar-days">{Array.from({ length: firstDay }, (_, index) => <span className="calendar-empty" key={`empty-${index}`} />)}{Array.from({ length: daysInMonth }, (_, index) => { const day = index + 1; const conference = events.get(day); const isSelected = conference?.id === selectedConference.id; return <div className={`${conference ? "calendar-day calendar-day-event" : "calendar-day"}${isSelected ? " calendar-day-selected" : ""}`} key={day}><span>{day}</span>{conference ? <button onClick={() => onSelectConference(conference)} aria-pressed={isSelected}><i className={`status-${conference.status.toLowerCase()}`} />{conference.name}</button> : null}</div>; })}</div></section>;
+      const events = new Map<number, Conference[]>();
+      conferences.filter((conference) => conference.startDate.startsWith(key)).forEach((conference) => {
+        const day = new Date(conference.startDate).getUTCDate();
+        events.set(day, [...(events.get(day) ?? []), conference]);
+      });
+      return <section className="month-calendar" key={key}><div className="calendar-month-heading"><div className="month-navigation"><button onClick={() => shiftMonth(-1)} aria-label="Previous month"><ChevronLeft size={16} /></button><h3>{new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date(Date.UTC(year, monthIndex - 1, 1)))}</h3><button onClick={() => shiftMonth(1)} aria-label="Next month"><ChevronRight size={16} /></button></div></div><div className="calendar-weekdays" aria-hidden="true">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => <span key={day}>{day}</span>)}</div><div className="calendar-days">{Array.from({ length: firstDay }, (_, index) => <span className="calendar-empty" key={`empty-${index}`} />)}{Array.from({ length: daysInMonth }, (_, index) => { const day = index + 1; const dayEvents = events.get(day) ?? []; return <div className={dayEvents.length ? "calendar-day calendar-day-event" : "calendar-day"} key={day}><span>{day}</span>{dayEvents.map((conference) => <button className={conference.id === selectedConference.id ? "calendar-event-selected" : ""} key={conference.id} onClick={() => onSelectConference(conference)} aria-pressed={conference.id === selectedConference.id}><i className={`status-${conference.status.toLowerCase()}`} />{conference.name}</button>)}</div>; })}</div></section>;
     })}
   </section>;
 }

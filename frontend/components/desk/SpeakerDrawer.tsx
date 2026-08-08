@@ -41,10 +41,11 @@ export function SpeakerDrawer({
       <aside
         className="speaker-drawer"
         role="dialog"
+        aria-modal="true"
         aria-label="Speaker detail"
         onClick={(event) => event.stopPropagation()}
       >
-        <header>
+        <header className="speaker-drawer-header">
           <span className="avatar avatar-1">{initials(lead.name)}</span>
           <div>
             <strong>{lead.name}</strong>
@@ -57,41 +58,48 @@ export function SpeakerDrawer({
           </button>
         </header>
 
-        <div className="drawer-score">
+        <section className="drawer-overview">
           <span>
             {lead.score}
             <small>Tier {lead.tier}</small>
           </span>
-          <p>{lead.scoreReason}</p>
-          <em>Confidence {(lead.confidence * 100).toFixed(0)}%</em>
-        </div>
+          <div>
+            <span className="mini-label">Why this contact</span>
+            <p>{lead.scoreReason}</p>
+            <em>Confidence {(lead.confidence * 100).toFixed(0)}%</em>
+          </div>
+        </section>
 
         <section className="drawer-status">
           <div className="status-control">
-            <span className="mini-label">Funnel status</span>
-            <strong>{FUNNEL_LABELS[status]}</strong>
-            <button type="button" disabled={!next} onClick={onAdvance}>
-              Advance{next ? ` → ${FUNNEL_LABELS[next]}` : ""}
-              <ChevronRight size={14} />
-            </button>
+            <div>
+              <span className="mini-label">Funnel status</span>
+              <strong>{FUNNEL_LABELS[status]}</strong>
+            </div>
+            <div className="status-actions">
+              <label className="sr-only" htmlFor="lead-status">
+                Set lead status
+              </label>
+              <select
+                id="lead-status"
+                value={status}
+                onChange={(event) => onSetStatus(event.target.value as LeadStatus)}
+              >
+                {FUNNEL_STAGES.map((stage) => (
+                  <option key={stage} value={stage}>
+                    {FUNNEL_LABELS[stage]}
+                  </option>
+                ))}
+              </select>
+              <button type="button" disabled={!next} onClick={onAdvance}>
+                Advance{next ? ` → ${FUNNEL_LABELS[next]}` : ""}
+                <ChevronRight size={14} />
+              </button>
+            </div>
           </div>
-          <label className="sr-only" htmlFor="lead-status">
-            Set lead status
-          </label>
-          <select
-            id="lead-status"
-            value={status}
-            onChange={(event) => onSetStatus(event.target.value as LeadStatus)}
-          >
-            {FUNNEL_STAGES.map((stage) => (
-              <option key={stage} value={stage}>
-                {FUNNEL_LABELS[stage]}
-              </option>
-            ))}
-          </select>
         </section>
 
-        <section>
+        <section className="drawer-section">
           <span className="mini-label">Score breakdown</span>
           <div className="score-bars drawer-bars">
             {breakdown.map((row) => (
@@ -100,51 +108,44 @@ export function SpeakerDrawer({
           </div>
         </section>
 
-        <section>
+        <section className="drawer-section">
           <span className="mini-label">Evidence</span>
-          {lead.evidence.map((evidence) => (
-            <a
-              key={`${evidence.sourceUrl}-${evidence.label}`}
-              href={evidence.sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="drawer-evidence"
-            >
-              <strong>{evidence.label}</strong>
-              <span>{evidence.excerpt}</span>
-              <ExternalLink size={12} />
+          <div className="drawer-evidence-list">{lead.evidence.map((evidence) => (
+            <a key={`${evidence.sourceUrl}-${evidence.label}`} href={evidence.sourceUrl} target="_blank" rel="noreferrer" className="drawer-evidence">
+              <div><strong>{evidence.label}</strong><span>{evidence.excerpt}</span></div>
+              <ExternalLink size={14} />
             </a>
-          ))}
+          ))}</div>
           {lead.topics?.length ? (
             <p className="drawer-topics">Topics: {lead.topics.join(" · ")}</p>
           ) : null}
         </section>
 
-        <section>
+        <section className="drawer-section drawer-sequence-section">
           <span className="mini-label">Generated sequence</span>
           <div className="drawer-sequence">
             {steps.map((step) => {
               const draft = draftList.find((d) => d.anchor === step.anchor);
               return (
-                <article key={step.id}>
-                  <header>
-                    <strong>
+                <details key={step.id} open={draft?.anchor === activeDraft?.anchor}>
+                  <summary>
+                    <span>
                       {step.anchor} · {step.label}
-                    </strong>
+                    </span>
                     <small>
                       {formatShortDate(step.scheduledFor)} · {step.status}
                     </small>
-                  </header>
+                  </summary>
                   {draft ? (
-                    <>
+                    <div className="sequence-draft-copy">
                       <em>{draft.subject}</em>
                       <p>{draft.body}</p>
                       <small>
                         Grounded on: {draft.groundedOn.join(" · ") || "session evidence"}
                       </small>
-                    </>
-                  ) : null}
-                </article>
+                    </div>
+                  ) : <p className="sequence-empty">No draft has been generated for this touch yet.</p>}
+                </details>
               );
             })}
           </div>
