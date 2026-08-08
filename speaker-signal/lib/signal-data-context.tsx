@@ -25,6 +25,11 @@ import {
   resolveTeamInbox,
   type MailStatus,
 } from "@/lib/desk-profile";
+import {
+  conferences as demoConferences,
+  sequenceSteps as demoSequenceSteps,
+  speakers as demoSpeakers,
+} from "@/lib/demo-data";
 
 export type AgentHealthDot = {
   service: string;
@@ -351,13 +356,18 @@ export type SignalDataValue = {
 const SignalDataContext = createContext<SignalDataValue | null>(null);
 
 function useSignalDataState(): SignalDataValue {
-  // Desk starts empty; paste a public conference URL and Analyze to fill via Agents 1→2.
+  // Seed from DCW schedule CSV demo; GTM /api/sequences bootstrap can replace with live Atlas data.
   const [url, setUrl] = useState(DEFAULT_LIVE_URL);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [pipelineIndex, setPipelineIndex] = useState(-1);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<QualifyNotice | null>(null);
+  const [notice, setNotice] = useState<QualifyNotice | null>({
+    mode: "demo",
+    message: `Demo: ${demoSpeakers.length} speakers from Data Center World Power 2026 schedule.`,
+    speakersIngested: demoSpeakers.length,
+    qualified: demoSpeakers.length,
+  });
   const [bootstrapped, setBootstrapped] = useState(false);
   const [systemHealth, setSystemHealth] = useState<SystemHealth>({
     status: "unknown",
@@ -368,17 +378,41 @@ function useSignalDataState(): SignalDataValue {
     },
   });
 
-  const [leads, setLeads] = useState<DeskLead[]>([]);
-  const [statuses, setStatuses] = useState<Record<string, LeadStatus>>({});
-  const [conferences, setConferences] = useState<Conference[]>([]);
-  const [selectedConferenceId, setSelectedConferenceId] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState("");
-  const [stats, setStats] = useState<QualifyResponse["stats"] | null>(null);
+  const [leads, setLeads] = useState<DeskLead[]>(() =>
+    stampDemoRecipientEmail(demoSpeakers, DEFAULT_DEMO_INBOX),
+  );
+  const [statuses, setStatuses] = useState<Record<string, LeadStatus>>(() => {
+    const next: Record<string, LeadStatus> = {};
+    for (const lead of demoSpeakers) next[lead.id] = "identified";
+    return next;
+  });
+  const [conferences, setConferences] = useState<Conference[]>(demoConferences);
+  const [selectedConferenceId, setSelectedConferenceId] = useState<string | null>(
+    demoConferences[0]?.id ?? null,
+  );
+  const [selectedId, setSelectedId] = useState(demoSpeakers[0]?.id ?? "");
+  const [stats, setStats] = useState<QualifyResponse["stats"] | null>({
+    speakersIngested: demoSpeakers.length,
+    afterDedupe: demoSpeakers.length,
+    qualified: demoSpeakers.length,
+    companiesFound: new Set(demoSpeakers.map((s) => s.company).filter(Boolean)).size,
+    scoredWithOpenAI: false,
+  });
   const [qualifyConference, setQualifyConference] = useState<
     QualifyResponse["conference"] | null
-  >(null);
+  >(() => {
+    const conf = demoConferences[0];
+    if (!conf) return null;
+    return {
+      name: conf.name,
+      startDate: conf.startDate,
+      endDate: conf.endDate,
+      location: conf.city,
+      websiteUrl: conf.sourceUrl,
+    };
+  });
 
-  const [sequenceSteps, setSequenceSteps] = useState<SequenceStep[]>([]);
+  const [sequenceSteps, setSequenceSteps] = useState<SequenceStep[]>(demoSequenceSteps);
   const [drafts, setDrafts] = useState<SequenceDraft[]>([]);
   const [sequenceLoading, setSequenceLoading] = useState(false);
   const [sequenceError, setSequenceError] = useState<string | null>(null);

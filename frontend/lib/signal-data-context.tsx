@@ -25,6 +25,11 @@ import {
   resolveTeamInbox,
   type MailStatus,
 } from "@/lib/desk-profile";
+import {
+  conferences as demoConferences,
+  sequenceSteps as demoSequenceSteps,
+  speakers as demoSpeakers,
+} from "@/lib/demo-data";
 
 export type AgentHealthDot = {
   service: string;
@@ -351,13 +356,18 @@ export type SignalDataValue = {
 const SignalDataContext = createContext<SignalDataValue | null>(null);
 
 function useSignalDataState(): SignalDataValue {
-  // Desk starts empty; paste a public conference URL and Analyze to fill via Agents 1→2.
+  // Seed from DCW schedule CSV demo; GTM /api/sequences bootstrap can replace with live Atlas data.
   const [url, setUrl] = useState(DEFAULT_LIVE_URL);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [pipelineIndex, setPipelineIndex] = useState(-1);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<QualifyNotice | null>(null);
+  const [notice, setNotice] = useState<QualifyNotice | null>({
+    mode: "demo",
+    message: `Demo: ${demoSpeakers.length} speakers from Data Center World Power 2026 schedule.`,
+    speakersIngested: demoSpeakers.length,
+    qualified: demoSpeakers.length,
+  });
   const [bootstrapped, setBootstrapped] = useState(false);
   const [systemHealth, setSystemHealth] = useState<SystemHealth>({
     status: "unknown",
@@ -368,17 +378,41 @@ function useSignalDataState(): SignalDataValue {
     },
   });
 
-  const [leads, setLeads] = useState<DeskLead[]>([]);
-  const [statuses, setStatuses] = useState<Record<string, LeadStatus>>({});
-  const [conferences, setConferences] = useState<Conference[]>([]);
-  const [selectedConferenceId, setSelectedConferenceId] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState("");
-  const [stats, setStats] = useState<QualifyResponse["stats"] | null>(null);
+  const [leads, setLeads] = useState<DeskLead[]>(() =>
+    stampDemoRecipientEmail(demoSpeakers, DEFAULT_DEMO_INBOX),
+  );
+  const [statuses, setStatuses] = useState<Record<string, LeadStatus>>(() => {
+    const next: Record<string, LeadStatus> = {};
+    for (const lead of demoSpeakers) next[lead.id] = "identified";
+    return next;
+  });
+  const [conferences, setConferences] = useState<Conference[]>(demoConferences);
+  const [selectedConferenceId, setSelectedConferenceId] = useState<string | null>(
+    demoConferences[0]?.id ?? null,
+  );
+  const [selectedId, setSelectedId] = useState(demoSpeakers[0]?.id ?? "");
+  const [stats, setStats] = useState<QualifyResponse["stats"] | null>({
+    speakersIngested: demoSpeakers.length,
+    afterDedupe: demoSpeakers.length,
+    qualified: demoSpeakers.length,
+    companiesFound: new Set(demoSpeakers.map((s) => s.company).filter(Boolean)).size,
+    scoredWithOpenAI: false,
+  });
   const [qualifyConference, setQualifyConference] = useState<
     QualifyResponse["conference"] | null
-  >(null);
+  >(() => {
+    const conf = demoConferences[0];
+    if (!conf) return null;
+    return {
+      name: conf.name,
+      startDate: conf.startDate,
+      endDate: conf.endDate,
+      location: conf.city,
+      websiteUrl: conf.sourceUrl,
+    };
+  });
 
-  const [sequenceSteps, setSequenceSteps] = useState<SequenceStep[]>([]);
+  const [sequenceSteps, setSequenceSteps] = useState<SequenceStep[]>(demoSequenceSteps);
   const [drafts, setDrafts] = useState<SequenceDraft[]>([]);
   const [sequenceLoading, setSequenceLoading] = useState(false);
   const [sequenceError, setSequenceError] = useState<string | null>(null);
@@ -550,62 +584,119 @@ function useSignalDataState(): SignalDataValue {
     let cancelled = false;
 
     async function bootstrap() {
+      let hydratedFromLeads = false;
       try {
-        const response = await fetch("/api/sequences", { cache: "no-store" });
-        const payload = (await response.json()) as {
-          sequences?: HydratedSequence[];
-        };
-        const sequences = Array.isArray(payload.sequences)
-          ? payload.sequences
-          : [];
-        if (!cancelled && sequences.length > 0) {
-          const inbox = teamInbox || DEFAULT_DEMO_INBOX;
-          const nextLeads = sequences
-            .map((seq) => deskLeadFromHydrated(seq, inbox))
-            .filter((lead): lead is DeskLead => Boolean(lead));
-          const byLead: Record<string, HydratedSequence> = {};
-          for (const seq of sequences) {
-            if (seq.leadId) byLead[seq.leadId] = seq;
-          }
-          const nextConferences = conferencesFromSequences(sequences);
-
-          if (nextLeads.length > 0) {
-            setLeads(stampDemoRecipientEmail(nextLeads, inbox));
-            setSequenceByLeadId(byLead);
-            setStatuses((prev) => {
-              const next = { ...prev };
-              for (const lead of nextLeads) {
-                if (!next[lead.id]) next[lead.id] = "identified";
-              }
-              return next;
-            });
-            if (nextConferences.length > 0) {
-              setConferences(nextConferences);
-              setSelectedConferenceId((cur) => cur ?? nextConferences[0]?.id ?? null);
-            }
-            setSelectedId((cur) => cur || nextLeads[0]?.id || "");
-            setQualifyConference((prev) => {
-              if (prev) return prev;
-              const first = sequences[0]?.conference;
-              if (!first?.startDate) return prev;
-              return {
-                name: first.name,
-                startDate: first.startDate,
-                endDate: first.endDate ?? null,
-                location: first.location ?? null,
-                websiteUrl: first.websiteUrl || "https://www.datacenterworld.com/",
-              };
-            });
+        const leadsRes = await fetch("/api/leads/latest", { cache: "no-store" });
+        if (leadsRes.ok) {
+          const payload = (await leadsRes.json()) as QualifyResponse;
+          if (!cancelled && payload.leads?.length) {
+            applyQualifyPayload(
+              payload,
+              {
+                setLeads,
+                setStats,
+                setQualifyConference,
+                setStatuses,
+                setConferences,
+                setSelectedConferenceId,
+                setSelectedId,
+              },
+              { postEvents: false, teamInbox },
+            );
             setNotice({
               mode: "live",
-              message: `Loaded ${nextLeads.length} speakers from GTM sequences.`,
-              speakersIngested: nextLeads.length,
-              qualified: nextLeads.length,
+              message: `Loaded ${payload.leads.length} speakers from latest qualification.`,
+              speakersIngested: payload.stats?.speakersIngested ?? payload.leads.length,
+              qualified: payload.stats?.qualified ?? payload.leads.length,
             });
+            hydratedFromLeads = true;
           }
         }
       } catch {
-        // Desk can still run Analyze if GTM list is unavailable.
+        // Fall through to GTM sequences.
+      }
+
+      if (!hydratedFromLeads) {
+        try {
+          const response = await fetch("/api/sequences", { cache: "no-store" });
+          const payload = (await response.json()) as {
+            sequences?: HydratedSequence[];
+          };
+          const sequences = Array.isArray(payload.sequences)
+            ? payload.sequences
+            : [];
+          if (!cancelled && sequences.length > 0) {
+            const inbox = teamInbox || DEFAULT_DEMO_INBOX;
+            const nextLeads = sequences
+              .map((seq) => deskLeadFromHydrated(seq, inbox))
+              .filter((lead): lead is DeskLead => Boolean(lead));
+            const byLead: Record<string, HydratedSequence> = {};
+            for (const seq of sequences) {
+              if (seq.leadId) byLead[seq.leadId] = seq;
+            }
+            const nextConferences = conferencesFromSequences(sequences);
+
+            if (nextLeads.length > 0) {
+              setLeads(stampDemoRecipientEmail(nextLeads, inbox));
+              setSequenceByLeadId(byLead);
+              setStatuses((prev) => {
+                const next = { ...prev };
+                for (const lead of nextLeads) {
+                  if (!next[lead.id]) next[lead.id] = "identified";
+                }
+                return next;
+              });
+              if (nextConferences.length > 0) {
+                setConferences(nextConferences);
+                setSelectedConferenceId(
+                  (cur) => cur ?? nextConferences[0]?.id ?? null,
+                );
+              }
+              setSelectedId((cur) => cur || nextLeads[0]?.id || "");
+              setQualifyConference((prev) => {
+                if (prev) return prev;
+                const first = sequences[0]?.conference;
+                if (!first?.startDate) return prev;
+                return {
+                  name: first.name,
+                  startDate: first.startDate,
+                  endDate: first.endDate ?? null,
+                  location: first.location ?? null,
+                  websiteUrl:
+                    first.websiteUrl || "https://www.datacenterworld.com/",
+                };
+              });
+              setNotice({
+                mode: "live",
+                message: `Loaded ${nextLeads.length} speakers from GTM sequences.`,
+                speakersIngested: nextLeads.length,
+                qualified: nextLeads.length,
+              });
+            }
+          }
+        } catch {
+          // Desk can still run Analyze if stores are unavailable.
+        }
+      } else {
+        // Still warm sequence cache when leads came from Agent 2.
+        try {
+          const response = await fetch("/api/sequences", { cache: "no-store" });
+          const payload = (await response.json()) as {
+            sequences?: HydratedSequence[];
+          };
+          const sequences = Array.isArray(payload.sequences)
+            ? payload.sequences
+            : [];
+          if (!cancelled && sequences.length > 0) {
+            const byLead: Record<string, HydratedSequence> = {};
+            for (const seq of sequences) {
+              if (seq.leadId) byLead[seq.leadId] = seq;
+            }
+            setSequenceByLeadId(byLead);
+          }
+        } catch {
+          // Sequences are optional when leads already hydrated.
+        }
       }
 
       await refreshFunnel();
