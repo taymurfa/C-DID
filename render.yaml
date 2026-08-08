@@ -82,9 +82,10 @@ services:
         sync: false
       - key: OPENAI_MODEL
         value: gpt-4o-mini
-      # Locked draft-only on Render — sequences never auto-send; SMTP mock only.
+      # Real send enabled — "Send demo to team" delivers to TEST_TO_EMAIL only.
+      # Requires SMTP_USER + SMTP_PASSWORD to be filled in the Render dashboard.
       - key: SEND_MODE
-        value: mock
+        value: real
       - key: SENDER_NAME
         value: Kirill Cheldishkin
       - key: SENDER_COMPANY
