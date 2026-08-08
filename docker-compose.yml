@@ -1,15 +1,21 @@
-# Speaker Signal demo stack — MongoDB Atlas only (no local Postgres/Mongo).
+# Dual-track demo stack — MongoDB Atlas only (no local Postgres/Mongo).
 # Requires MONGODB_URI (and optional OPENAI_API_KEY) in root .env.
 # Usage: docker compose up --build
 #
-# Dashboard  http://localhost:3000  (speaker-signal Signal Desk)
-# Ingestion  http://localhost:8001
-# Intelligence http://localhost:8002
-# GTM        http://localhost:8003  (Zoho SMTP via root .env SEND_MODE/SMTP_*)
+# Track 2 — Speaker Signal
+#   Dashboard  http://localhost:3000
+#   Ingestion  http://localhost:8001
+#   Intelligence http://localhost:8002
+#   GTM        http://localhost:8003
+#
+# Track 1 — Project Radar
+#   Atlas UI   http://localhost:3001
+#   R1 ingest  http://localhost:8011
+#   R2 normalize http://localhost:8012
+#   R3 score   http://localhost:8013
 #
 # Note: `gtm` builds from ./gtm-service (Node/Fastify). Do not point this
 # service at agents/agent3 — that Python stack is separate.
-# Optional ERCOT Atlas / landing fork lives under frontend/ and is not Compose.
 
 services:
   ingestion:
@@ -85,7 +91,6 @@ services:
       GTM_PORT: "8003"
       HOST: "0.0.0.0"
       MONGODB_DB: speaker_signal_gtm
-      # Zoho SMTP — interpolated from root .env (keep SMTP_PASSWORD quoted there if it contains #)
       SEND_MODE: ${SEND_MODE:-mock}
       SENDER_NAME: ${SENDER_NAME:-Kirill Cheldishkin}
       SENDER_COMPANY: ${SENDER_COMPANY:-Candid}
@@ -133,5 +138,120 @@ services:
       intelligence:
         condition: service_started
       gtm:
+        condition: service_started
+    restart: unless-stopped
+
+  radar-score:
+    build:
+      context: ./project-radar-score
+    image: project-radar-score
+    container_name: project-radar-score
+    ports:
+      - "8013:8013"
+    env_file:
+      - .env
+    environment:
+      RADAR_SCORE_PORT: "8013"
+      HOST: "0.0.0.0"
+      MONGODB_DB: project_radar_score
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "fetch('http://localhost:8013/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  radar-normalize:
+    build:
+      context: ./project-radar-normalize
+    image: project-radar-normalize
+    container_name: project-radar-normalize
+    ports:
+      - "8012:8012"
+    env_file:
+      - .env
+    environment:
+      RADAR_NORMALIZE_PORT: "8012"
+      HOST: "0.0.0.0"
+      MONGODB_DB: project_radar_normalize
+      HANDOFF_ENABLED: "true"
+      RADAR_SCORE_URL: "http://radar-score:8013"
+    depends_on:
+      radar-score:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "fetch('http://localhost:8012/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  radar-ingest:
+    build:
+      context: ./project-radar-ingest
+    image: project-radar-ingest
+    container_name: project-radar-ingest
+    ports:
+      - "8011:8011"
+    env_file:
+      - .env
+    environment:
+      RADAR_INGEST_PORT: "8011"
+      HOST: "0.0.0.0"
+      MONGODB_DB: project_radar_ingest
+      HANDOFF_ENABLED: "true"
+      RADAR_NORMALIZE_URL: "http://radar-normalize:8012"
+    depends_on:
+      radar-normalize:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "fetch('http://localhost:8011/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  atlas:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-true}
+    image: project-radar-atlas
+    container_name: project-radar-atlas
+    ports:
+      - "3001:3000"
+    env_file:
+      - .env
+    environment:
+      HOSTNAME: "0.0.0.0"
+      PORT: "3000"
+      RADAR_INGEST_API_URL: "http://radar-ingest:8011"
+      RADAR_NORMALIZE_API_URL: "http://radar-normalize:8012"
+      RADAR_SCORE_API_URL: "http://radar-score:8013"
+      INGESTION_API_URL: "http://ingestion:8001"
+      INTELLIGENCE_API_URL: "http://intelligence:8002"
+      GTM_API_URL: "http://gtm:8003"
+      NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-true}
+    depends_on:
+      radar-ingest:
+        condition: service_started
+      radar-normalize:
+        condition: service_started
+      radar-score:
         condition: service_started
     restart: unless-stopped

@@ -3,6 +3,7 @@
 import { ChevronDown, Map, Radio } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SignalDesk, SIGNAL_PAGES, type SignalPage } from "@/components/SignalDesk";
+import { RadarOverlay } from "@/components/radar/RadarOverlay";
 import { SignalDataProvider } from "@/lib/signal-data-context";
 import "../signal-desk.css";
 
@@ -89,7 +90,10 @@ export default function AppPage() {
       </div>
 
       {view === "map" ? (
-        <iframe className="atlas-frame" src="/ercot-atlas.html" title="ERCOT Power Project Atlas" />
+        <div className="radar-map-layout">
+          <iframe className="atlas-frame" src="/ercot-atlas.html" title="ERCOT Power Project Atlas" />
+          <RadarOverlay />
+        </div>
       ) : (
         <SignalDataProvider>
           <SignalDesk activePage={signalPage} onPageChange={setSignalPage} />

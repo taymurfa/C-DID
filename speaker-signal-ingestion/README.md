@@ -137,7 +137,7 @@ CRAWL_MAX_DEPTH=2
 CRAWL_CONCURRENCY=2
 CRAWL_REQUEST_DELAY_MS=750
 CRAWL_REQUEST_TIMEOUT_MS=20000
-CRAWL_USER_AGENT=SpeakerSignalIngestionBot/0.1 (+https://example.com/bot)
+CRAWL_USER_AGENT=SpeakerSignalIngestionBot/0.1 (+https://github.com/)
 RESPECT_ROBOTS=true
 AUTO_INGEST_ENABLED=true
 AUTO_INGEST_MIN_CONFIDENCE=0.6
@@ -166,7 +166,7 @@ AUTO_INGEST_MAX_PAGES=12
 Request:
 
 ```json
-{ "conferenceUrl": "https://example.com", "maxPages": 12, "discoverEvents": true }
+{ "conferenceUrl": "https://www.7x24exchange.org/", "maxPages": 12, "discoverEvents": true }
 ```
 
 `maxPages` (optional, <=40) and `discoverEvents` (optional, default true) tune the

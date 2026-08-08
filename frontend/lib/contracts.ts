@@ -94,13 +94,12 @@ export const QualifiedLeadSchema = SpeakerSchema.extend({
 });
 
 export const QualifyRequestSchema = z.object({
-  // Full Agent 1 ingestion payload, a conference URL for Agent 1, or omit both
-  // for the GridForward fixture. All paths score through the same Agent 2 pipeline.
+  // Full Agent 1 ingestion payload or a conference URL for Agent 1.
   ingestion: z.unknown().optional(),
   conferenceUrl: z.url().optional(),
   agentUrl: z.url().optional(),
   maxPages: z.number().int().positive().max(40).optional(),
-  /** @deprecated Kept for API compat — empty body already uses the fixture. */
+  /** @deprecated Kept for API compat — demo fixtures are disabled. */
   demoMode: z.boolean().default(false),
   minTier: z.enum(["A", "B", "C", "D"]).default("C"),
 });

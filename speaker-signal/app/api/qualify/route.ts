@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { ingestionApiUrl, intelligenceApiUrl } from "@/lib/agents";
 import { QualifyRequestSchema, QualifyResponseSchema } from "@/lib/contracts";
 import { mapIntelligenceToQualifyResponse } from "@/lib/map-intelligence";
-import { demoIngestion } from "@/lib/pipeline/demo-ingestion";
 import { IngestionResultSchema, type IngestionResult } from "@/lib/pipeline/ingestion";
 import { qualify } from "@/lib/pipeline/qualify";
 
@@ -118,7 +117,7 @@ export async function POST(request: Request) {
     let source: IngestionResult;
     let mode: "live" | "demo";
 
-    // One pipeline: URL → Agent 1, otherwise GridForward fixture. Both score via Agent 2.
+    // One pipeline: ingestion payload or conference URL → Agent 1, then score via Agent 2.
     if (ingestion) {
       source = IngestionResultSchema.parse(ingestion);
       mode = "live";
@@ -134,8 +133,10 @@ export async function POST(request: Request) {
       source = await fetchFromAgent1(agentBase, target.href, maxPages);
       mode = "live";
     } else {
-      source = demoIngestion;
-      mode = "demo";
+      return NextResponse.json(
+        { error: "Provide conferenceUrl or an ingestion payload. Demo fixtures are disabled." },
+        { status: 400 },
+      );
     }
 
     const fromAgent2 = await qualifyViaIntelligence(source, mode, minTier);

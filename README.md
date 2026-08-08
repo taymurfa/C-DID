@@ -1,8 +1,11 @@
-# Candid Intelligence — Origination Desk
+# Candid Intelligence — Speaker Signal + Project Radar
 
-The `Jobersteadt` branch now combines both hackathon tracks. **Project Radar (Track 1)** resolves early-stage energy projects from public signals. **Speaker Signal (Track 2)** turns public conference agendas into explainably ranked people and event-anchored outreach. The combined signal connects the right project, company, person, and moment.
+Dual-track hackathon build on the `Jobersteadt` branch.
 
-For the Candid write-up and locked 5-minute Track 2 demo, see [`SUBMISSION.md`](SUBMISSION.md).
+- **Track 2 — Speaker Signal** (primary desk): conference agenda → ranked ICP speakers → event-anchored outreach → funnel.
+- **Track 1 — Project Radar** (POC): multi-source project fixtures → entity resolution → stage inference → atlas overlay.
+
+Write-up + Track 2 demo script: [`SUBMISSION.md`](SUBMISSION.md). Track 1 spec: [`docs/PROJECT_RADAR_SPEC.md`](docs/PROJECT_RADAR_SPEC.md).
 
 ## Judge quick start
 
@@ -11,39 +14,34 @@ cp .env.example .env   # set MONGODB_URI for Atlas persistence; OPENAI_API_KEY o
 docker compose up --build
 ```
 
-- Dashboard: `http://localhost:3000`
-- Agents: ingestion `:8001` · intelligence `:8002` · GTM `:8003`
+| Surface | URL |
+| --- | --- |
+| Track 2 Signal Desk | http://localhost:3000 |
+| Track 1 Project Radar atlas | http://localhost:3001 |
+| Track 2 agents | `:8001` ingest · `:8002` intelligence · `:8003` GTM |
+| Track 1 agents | `:8011` R1 · `:8012` R2 · `:8013` R3 |
 
-The dashboard's fixture-backed flows need no credentials. Track 1 resolves 10 projects from 24 public-source records. Track 2 resolves five ingested speaker records to four unique people and three qualified leads. Live agents need Atlas Network Access for the Docker host IP.
-
-Desk-only fallback:
-
-```bash
-cd speaker-signal
-pnpm install
-pnpm dev
-```
+Demo modes need no credentials. Live agents need Atlas Network Access for the Docker host IP.
 
 ## Demo path
 
-1. Open **Project Radar** and click **Run refresh**.
-2. Inspect project capacity, inferred stage, confidence, progression, and cross-source evidence.
-3. In the combined signal, draft an intro and open Maya Chen, the speaker matched to HelioCore Energy.
-4. Return to **Overview**, click **Analyze conference**, and inspect the ranked speakers, cadence, and funnel.
+**Track 2 (5 min):** open `:3000` → **Analyze conference** → 5→4→3 qualify → speaker cadence → sequences → funnel.
+
+**Track 1 (~2 min):** open `:3001` → Map → **Demo ingest** → open the **ER**-badged Lone Star BTM project (aliases + stage evidence + people join).
 
 ## What is built
 
 | Surface | Location | Role |
 | --- | --- | --- |
-| Origination Desk | [`speaker-signal/`](speaker-signal/) | Project Radar, Speaker Signal, combined opportunities, and demo fallbacks |
-| Agent 1 | [`speaker-signal-ingestion/`](speaker-signal-ingestion/) | Public-page discovery, bounded crawling, extraction, and auto-ingest |
-| Agent 2 | [`intelligence-service/`](intelligence-service/) | Normalize, dedupe, ICP score, rank, and explain |
-| Agent 3 | [`gtm-service/`](gtm-service/) | Event-anchored sequences, draft emails, and funnel persistence |
+| Signal Desk | [`speaker-signal/`](speaker-signal/) | Track 2 Next.js dashboard |
+| Agent 1–3 | [`speaker-signal-ingestion/`](speaker-signal-ingestion/), [`intelligence-service/`](intelligence-service/), [`gtm-service/`](gtm-service/) | Track 2 pipeline |
+| Project Atlas UI | [`frontend/`](frontend/) | Track 1 map + radar overlay + proxies |
+| Radar R1–R3 | [`project-radar-ingest/`](project-radar-ingest/), [`project-radar-normalize/`](project-radar-normalize/), [`project-radar-score/`](project-radar-score/) | Track 1 ingest / ER / stage+join |
 
-Track 1 follows `public project signals → typed extraction → entity resolution → stage inference → ranked project`. Track 2 follows `conference URL → Agent 1 → Agent 2 → Agent 3`. Email send defaults to **mock** (`SEND_MODE=mock`).
+Email send defaults to **mock** (`SEND_MODE=mock`).
 
 ## Deploy to Render
 
-See [`docs/RENDER.md`](docs/RENDER.md). Root [`render.yaml`](render.yaml) is a Blueprint for the web app plus Agents 1–3. Set its `sync: false` secrets in Render.
+See [`docs/RENDER.md`](docs/RENDER.md). Root [`render.yaml`](render.yaml) covers Track 2 services; add Radar agents when promoting Track 1.
 
-Product spec: [`docs/SPEAKER_SIGNAL_SPEC.md`](docs/SPEAKER_SIGNAL_SPEC.md).
+Product specs: [`docs/SPEAKER_SIGNAL_SPEC.md`](docs/SPEAKER_SIGNAL_SPEC.md) · [`docs/PROJECT_RADAR_SPEC.md`](docs/PROJECT_RADAR_SPEC.md).

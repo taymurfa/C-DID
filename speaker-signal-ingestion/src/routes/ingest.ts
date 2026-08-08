@@ -184,7 +184,7 @@ export async function ingestRoutes(app: FastifyInstance): Promise<void> {
             conferenceUrl: {
               type: "string",
               format: "uri",
-              example: "https://example.com",
+              example: "https://www.7x24exchange.org/",
             },
             maxPages: {
               type: "integer",

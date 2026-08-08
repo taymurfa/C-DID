@@ -6,15 +6,15 @@ import { z } from "zod";
  * partial upstream data without throwing.
  */
 
-/** Accept absolute URLs; coerce blank/relative values to a placeholder. */
+/** Accept absolute HTTP(S) URLs; blank/invalid values become empty string then fail url(). */
 const LooseUrlSchema = z.preprocess((value) => {
   if (typeof value !== "string" || !value.trim()) {
-    return "https://example.com/unknown";
+    return undefined;
   }
   try {
     return new URL(value).href;
   } catch {
-    return "https://example.com/unknown";
+    return undefined;
   }
 }, z.string().url());
 

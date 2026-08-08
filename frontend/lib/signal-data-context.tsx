@@ -19,11 +19,6 @@ import type {
   SequenceStep,
   Speaker,
 } from "@/lib/contracts";
-import {
-  conferences as seedConferences,
-  sequenceSteps as seedSequenceSteps,
-  speakers as seedSpeakers,
-} from "@/lib/demo-data";
 import { computeFunnel, nextLeadStatus } from "@/lib/pipeline/funnel";
 
 export type AgentHealthDot = {
@@ -69,14 +64,6 @@ type SequenceConferencePayload = {
 
 const DEFAULT_LIVE_URL = "https://www.7x24exchange.org/";
 
-const SEED_STATUSES: Record<string, LeadStatus> = {
-  "maya-chen": "replied",
-  "marcus-reed": "contacted",
-  "elena-torres": "meeting",
-  "darius-okafor": "identified",
-  "priya-shah": "identified",
-};
-
 function toIsoDate(value: string | null | undefined, fallback: string): string {
   if (!value) return fallback;
   const parsed = new Date(value);
@@ -107,8 +94,7 @@ function conferencePayloadFrom(
     };
   }
   if (qualifyConference?.websiteUrl) {
-    const fallbackStart =
-      seedConferences[0]?.startDate ?? new Date().toISOString();
+    const fallbackStart = new Date().toISOString();
     return {
       name: qualifyConference.name,
       startDate: fallbackStart,
@@ -175,7 +161,7 @@ function applyQualifyPayload(
   const confId = "analyzed";
   const startDate = toIsoDate(
     payload.conference.startDate,
-    seedConferences[0]?.startDate ?? new Date().toISOString(),
+    new Date().toISOString(),
   );
   const endDate = toIsoDate(payload.conference.endDate, startDate);
   const analyzed: Conference = {
@@ -256,21 +242,17 @@ function useSignalDataState(): SignalDataValue {
     },
   });
 
-  const [leads, setLeads] = useState<DeskLead[]>(seedSpeakers);
-  const [statuses, setStatuses] = useState<Record<string, LeadStatus>>(() => ({
-    ...SEED_STATUSES,
-  }));
-  const [conferences, setConferences] = useState<Conference[]>(seedConferences);
-  const [selectedConferenceId, setSelectedConferenceId] = useState<string | null>(
-    seedConferences[0]?.id ?? null,
-  );
-  const [selectedId, setSelectedId] = useState(seedSpeakers[0]?.id ?? "");
+  const [leads, setLeads] = useState<DeskLead[]>([]);
+  const [statuses, setStatuses] = useState<Record<string, LeadStatus>>({});
+  const [conferences, setConferences] = useState<Conference[]>([]);
+  const [selectedConferenceId, setSelectedConferenceId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState("");
   const [stats, setStats] = useState<QualifyResponse["stats"] | null>(null);
   const [qualifyConference, setQualifyConference] = useState<
     QualifyResponse["conference"] | null
   >(null);
 
-  const [sequenceSteps, setSequenceSteps] = useState<SequenceStep[]>(seedSequenceSteps);
+  const [sequenceSteps, setSequenceSteps] = useState<SequenceStep[]>([]);
   const [drafts, setDrafts] = useState<SequenceDraft[]>([]);
   const [sequenceLoading, setSequenceLoading] = useState(false);
   const [sequenceError, setSequenceError] = useState<string | null>(null);
@@ -721,7 +703,7 @@ function useSignalDataState(): SignalDataValue {
         .map((event, index) => {
           const startDate = toIsoDate(
             event.startDate,
-            seedConferences[0]?.startDate ?? new Date().toISOString(),
+            new Date().toISOString(),
           );
           let host = "event";
           try {

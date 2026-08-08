@@ -84,7 +84,7 @@ export const env = {
     retryBaseMs: readInt("CRAWL_RETRY_BASE_MS", 500),
     userAgent:
       process.env.CRAWL_USER_AGENT?.trim() ||
-      "SpeakerSignalIngestionBot/0.1 (+https://example.com/bot)",
+      "SpeakerSignalIngestionBot/0.1 (+https://github.com/)",
   },
 
   respectRobots: readBool("RESPECT_ROBOTS", true),

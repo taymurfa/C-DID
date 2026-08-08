@@ -1,8 +1,13 @@
-# Speaker Signal — Hackathon Submission
+# Candid Origination — Hackathon Submission
 
-Track 2 submission for Candid. Canonical demo surface: Compose → [`speaker-signal/`](speaker-signal/) + Agents 1–3.
+Dual-track submission for Candid: **Track 2 Speaker Signal** (canonical 5-min demo) + **Track 1 Project Radar** (POC on the same agent pattern).
+
+- Track 2 desk: Compose → [`speaker-signal/`](speaker-signal/) + Agents 1–3 (`:3000`)
+- Track 1 atlas: Compose → [`frontend/`](frontend/) + Radar R1–R3 (`:3001`)
 
 ## What we built
+
+### Track 2 — Speaker Signal
 
 Speaker Signal turns **public conference agendas** into a GTM motion for Candid’s ICP (lean energy / data-center-power owner-operators). Paste or demo-analyze a conference → Agent 1 ingests speakers + sessions → Agent 2 dedupes and ICP-scores with human-readable reasons → Agent 3 builds an event-anchored sequence (T−14 / T−7 / T−2 / Event / T+2) with personalized drafts → the Signal Desk shows ranked speakers, cadence, and funnel drop-off in one place.
 
@@ -12,39 +17,59 @@ Three-agent architecture:
 2. **Intelligence** (`intelligence-service`, `:8002`) — normalize, dedupe, score, rank, explain.
 3. **GTM** (`gtm-service`, `:8003`) — sequences, drafts, funnel events (mock send by default).
 
-Offline robustness: `NEXT_PUBLIC_DEMO_MODE` + fixture ingestion so judges complete the DoD with no API keys.
+Offline robustness: fixture ingestion so judges complete the DoD with no API keys.
+
+### Track 1 — Project Radar (POC)
+
+Project Radar mirrors the same Node/Fastify + Mongo pattern for **projects**:
+
+1. **R1 ingest** (`project-radar-ingest`, `:8011`) — multi-source fixtures (ERCOT GIS + PUCT + TCEQ).
+2. **R2 normalize** (`project-radar-normalize`, `:8012`) — entity resolution (hard case: three LLC/names → one project).
+3. **R3 score** (`project-radar-score`, `:8013`) — stage inference with confidence + evidence, rank, light people↔project join.
+
+UI: ERCOT atlas + **Demo ingest** overlay on [`frontend/`](frontend/) (`:3001`).
 
 ## Sources used
 
-Public conference / organizer pages only (no private CRM, no scraped paywalls):
+**Track 2** — public conference / organizer pages only:
 
 | Seed / venue | Role |
 | --- | --- |
 | [7x24 Exchange](https://www.7x24exchange.org/) | Compose `BOOTSTRAP_SEEDS` discovery |
 | [Data Center World](https://www.datacenterworld.com/) | Compose `BOOTSTRAP_SEEDS` discovery |
 | [Infrastructure Masons events](https://infrastructuremasons.org/events/) | Compose `BOOTSTRAP_SEEDS` discovery |
-| Desk calendar fixtures | GridForward Summit, Energy Storage North America, POWERGEN, Industrial Energy Forum (demo calendar context) |
+| Desk calendar fixtures | GridForward Summit, Energy Storage North America, POWERGEN, Industrial Energy Forum |
 
 Demo Analyze uses a fixture GridForward agenda (5 speakers including a duplicate + non-ICP journalist) so judges always see **5 → 4 → 3**.
 
+**Track 1** — public project signals (POC fixtures modeled on):
+
+| Source | Role |
+| --- | --- |
+| ERCOT GIS report | Queue / milestone / capacity rows |
+| PUCT Interchange | Docket / CCN / market registration stubs |
+| TCEQ air permits | Permit stubs aliased to the same projects |
+
+Hard ER demo: *Lone Star BTM Energy Storage* ↔ *LSBTM Holdings LLC* ↔ *LoneStar Behind-the-Meter Facility*.
+
 ## Compliance
 
-- **Public data only** — agendas and speaker directories published on the open web.
-- **Robots / rate limits** — Agent 1 uses bounded crawl (`maxPages`, concurrency caps); discover/auto-ingest are budgeted, not open-ended scrapes.
-- **Mock send** — `SEND_MODE=mock` by default; desk copy says “Draft only — no automatic sending” / “No send — review only.” Drafts include an easy opt-out (`reply STOP`).
-- **Honest gaps** — no real open/reply tracking; calendar self-update is seed + discover/auto-ingest, not a fully autonomous product; Firecrawl `/api/analyze` is preview-only (Agent 1 is the real ingest path).
+- **Public data only** — agendas, speaker directories, and public queue/permit-style records.
+- **Robots / rate limits** — Agent 1 uses bounded crawl; Radar POC is fixture-first (no open-ended scrapes).
+- **Mock send** — `SEND_MODE=mock` by default; drafts include opt-out (`reply STOP`).
+- **Honest gaps** — no real open/reply tracking; Radar live scrapers / full GIS regenerator not shipped; join is fixture-linked to Track 2 demo companies.
 
 ## What we’d build next week
 
-1. **Real engagement metrics** — open/reply/meeting instrumentation wired into the funnel (still consent-safe).
-2. **Stronger calendar discovery** — richer recurring-event seeds + change detection when agendas publish.
-3. **Light project ↔ people join** — connect ICP speakers to the static ERCOT atlas / Project Radar entities for a bonus “who is speaking *and* what are they building” view (without full multi-source Track 1).
+1. **Real engagement metrics** — open/reply/meeting instrumentation wired into the funnel.
+2. **Stronger calendar discovery** — richer recurring-event seeds + change detection.
+3. **Live Radar adapters** — real PUCT/TCEQ fetch + regenerable ERCOT GIS pipeline; deeper projects↔people join in one desk.
 
 ---
 
 ## 5-minute demo script
 
-Locked narrative for judges. Aim ~4:30 + buffer; Atlas is optional overtime only.
+Locked narrative for judges. Aim ~4:30 on Track 2; add ~90s for Track 1 if time remains.
 
 ### 0:00 — Problem (30s)
 
