@@ -30,11 +30,11 @@ services:
       - key: OPENAI_MODEL
         value: gpt-4o-mini
 
-  # --- Agent 1: Ingestion (Playwright — needs more than free-tier disk/RAM) ----
+  # --- Agent 1: Ingestion (Playwright — free tier: may hit disk/RAM limits) ----
   - type: web
     name: gridconnects-ingestion
     runtime: docker
-    plan: starter
+    plan: free
     repo: https://github.com/taymurfa/C-DID
     branch: Jobersteadt
     dockerfilePath: ./speaker-signal-ingestion/Dockerfile
