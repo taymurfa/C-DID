@@ -23,7 +23,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { speakers } from "@/lib/demo-data";
+import type { Speaker } from "@/lib/contracts";
+import { speakers as demoSpeakers } from "@/lib/demo-data";
 import { demoProjects, projectRadarSourceCount } from "@/lib/project-radar-data";
 import {
   PROJECT_STAGES,
@@ -36,6 +37,7 @@ import {
 type ProjectRadarProps = {
   onOpenSpeaker: (speakerId: string) => void;
   onOpenNavigation: () => void;
+  speakerCandidates?: Speaker[];
 };
 
 const SOURCE_TYPES: ProjectSourceType[] = [
@@ -63,7 +65,11 @@ function initials(name: string): string {
   return name.split(" ").map((part) => part[0]).join("").slice(0, 2);
 }
 
-export function ProjectRadar({ onOpenSpeaker, onOpenNavigation }: ProjectRadarProps) {
+export function ProjectRadar({
+  onOpenSpeaker,
+  onOpenNavigation,
+  speakerCandidates = demoSpeakers,
+}: ProjectRadarProps) {
   const [projects, setProjects] = useState<Project[]>(demoProjects);
   const [selectedId, setSelectedId] = useState(demoProjects[0].id);
   const [stageFilter, setStageFilter] = useState<ProjectStage | "All">("All");
@@ -92,7 +98,7 @@ export function ProjectRadar({ onOpenSpeaker, onOpenNavigation }: ProjectRadarPr
     ?? filteredProjects[0]
     ?? projects.find((project) => project.id === selectedId)
     ?? projects[0];
-  const matchedSpeaker = speakers.find((speaker) => speaker.company === selected?.company) ?? null;
+  const matchedSpeaker = speakerCandidates.find((speaker) => speaker.company === selected?.company) ?? null;
   const earlyStageCount = projects.filter((project) => (STAGE_INDEX.get(project.stage) ?? 0) <= 3).length;
   const stageChangeCount = projects.filter((project) => project.stageChanged).length;
 
