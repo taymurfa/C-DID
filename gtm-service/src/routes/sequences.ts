@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import {
   getSequence,
+  getSequenceByLeadId,
   listSequences,
   patchSequenceStep,
   saveSequence,
@@ -16,6 +17,31 @@ import {
   SequenceRequestSchema,
   type SequenceRecord,
 } from "../schemas/gtm.js";
+
+function sequencePayload(record: SequenceRecord) {
+  return {
+    id: String(record.id ?? ""),
+    leadId: String(record.leadId ?? ""),
+    lead: record.lead ?? null,
+    conference: record.conference ?? null,
+    steps: Array.isArray(record.steps) ? record.steps : [],
+    drafts: Array.isArray(record.drafts) ? record.drafts : [],
+    createdAt: String(record.createdAt ?? ""),
+    updatedAt: String(record.updatedAt ?? ""),
+  };
+}
+
+function isUsableSequence(
+  payload: ReturnType<typeof sequencePayload>,
+): boolean {
+  return Boolean(
+    payload.leadId &&
+      payload.lead &&
+      typeof payload.lead === "object" &&
+      typeof (payload.lead as { name?: unknown }).name === "string" &&
+      (payload.lead as { name: string }).name.trim(),
+  );
+}
 
 export async function sequenceRoutes(app: FastifyInstance): Promise<void> {
   app.post(
@@ -57,6 +83,12 @@ export async function sequenceRoutes(app: FastifyInstance): Promise<void> {
       }
 
       try {
+        // Prefer an already-imported Agent 3 / persisted sequence for this lead.
+        const existing = await getSequenceByLeadId(lead.id);
+        if (existing?.steps?.length) {
+          return reply.status(200).send(sequencePayload(existing));
+        }
+
         const steps = generateSequence(lead, conference, now);
         const drafts = await draftSequenceEmails(lead, conference, steps);
         const withSubjects = attachDraftSubjects(steps, drafts);
@@ -72,14 +104,7 @@ export async function sequenceRoutes(app: FastifyInstance): Promise<void> {
           updatedAt: stamp,
         };
         await saveSequence(record);
-        return reply.status(200).send({
-          id: record.id,
-          leadId: record.leadId,
-          steps: record.steps,
-          drafts: record.drafts,
-          createdAt: record.createdAt,
-          updatedAt: record.updatedAt,
-        });
+        return reply.status(200).send(sequencePayload(record));
       } catch (error) {
         return reply.status(502).send({
           error:
@@ -95,22 +120,33 @@ export async function sequenceRoutes(app: FastifyInstance): Promise<void> {
     "/sequences",
     {
       schema: {
-        summary: "List persisted sequences",
+        summary: "List persisted sequences (Agent 3 + dashboard shapes)",
         tags: ["gtm"],
       },
     },
     async (_request, reply) => {
       const sequences = await listSequences();
       return reply.status(200).send({
-        sequences: sequences.map((s) => ({
-          id: s.id,
-          leadId: s.leadId,
-          steps: s.steps,
-          drafts: s.drafts,
-          createdAt: s.createdAt,
-          updatedAt: s.updatedAt,
-        })),
+        sequences: sequences.map(sequencePayload).filter(isUsableSequence),
       });
+    },
+  );
+
+  app.get(
+    "/sequences/by-lead/:leadId",
+    {
+      schema: {
+        summary: "Get a sequence by lead / speaker id",
+        tags: ["gtm"],
+      },
+    },
+    async (request, reply) => {
+      const { leadId } = request.params as { leadId: string };
+      const sequence = await getSequenceByLeadId(leadId);
+      if (!sequence) {
+        return reply.status(404).send({ error: "Sequence not found." });
+      }
+      return reply.status(200).send(sequencePayload(sequence));
     },
   );
 
@@ -128,14 +164,7 @@ export async function sequenceRoutes(app: FastifyInstance): Promise<void> {
       if (!sequence) {
         return reply.status(404).send({ error: "Sequence not found." });
       }
-      return reply.status(200).send({
-        id: sequence.id,
-        leadId: sequence.leadId,
-        steps: sequence.steps,
-        drafts: sequence.drafts,
-        createdAt: sequence.createdAt,
-        updatedAt: sequence.updatedAt,
-      });
+      return reply.status(200).send(sequencePayload(sequence));
     },
   );
 
@@ -179,14 +208,7 @@ export async function sequenceRoutes(app: FastifyInstance): Promise<void> {
       if (!updated) {
         return reply.status(404).send({ error: "Sequence or step not found." });
       }
-      return reply.status(200).send({
-        id: updated.id,
-        leadId: updated.leadId,
-        steps: updated.steps,
-        drafts: updated.drafts,
-        createdAt: updated.createdAt,
-        updatedAt: updated.updatedAt,
-      });
+      return reply.status(200).send(sequencePayload(updated));
     },
   );
 }

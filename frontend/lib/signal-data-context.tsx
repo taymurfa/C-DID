@@ -25,6 +25,11 @@ import {
   resolveTeamInbox,
   type MailStatus,
 } from "@/lib/desk-profile";
+import {
+  conferences as demoConferences,
+  sequenceSteps as demoSequenceSteps,
+  speakers as demoSpeakers,
+} from "@/lib/demo-data";
 
 export type AgentHealthDot = {
   service: string;
@@ -123,6 +128,113 @@ function conferencePayloadFrom(
 
 function delay(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+type HydratedSequence = {
+  id: string;
+  leadId: string;
+  lead?: Record<string, unknown> | null;
+  conference?: SequenceConferencePayload | null;
+  steps?: SequenceStep[];
+  drafts?: SequenceDraft[];
+};
+
+function tierFromScore(score: number): DeskLead["tier"] {
+  if (score >= 80) return "A";
+  if (score >= 65) return "B";
+  if (score >= 50) return "C";
+  return "D";
+}
+
+function scoreBreakdownFrom(score: number): DeskLead["scoreBreakdown"] {
+  return {
+    roleFit: Math.min(20, Math.round(score * 0.18)),
+    companyFit: Math.min(20, Math.round(score * 0.18)),
+    topicRelevance: Math.min(25, Math.round(score * 0.28)),
+    seniority: Math.min(15, Math.round(score * 0.14)),
+    buyingInfluence: Math.min(10, Math.round(score * 0.12)),
+    eventProximity: Math.min(10, Math.round(score * 0.1)),
+  };
+}
+
+function deskLeadFromHydrated(seq: HydratedSequence, inbox: string): DeskLead | null {
+  const lead = seq.lead;
+  if (!lead || typeof lead !== "object") return null;
+  const id = String(lead.id || seq.leadId || "");
+  const name = String(lead.name || "");
+  if (!id || !name) return null;
+  const score = Number(lead.score ?? 0);
+  const conferenceName = String(
+    lead.conference || seq.conference?.name || "Conference",
+  );
+  const evidenceRaw = Array.isArray(lead.evidence) ? lead.evidence : [];
+  const sourceUrl =
+    seq.conference?.websiteUrl || "https://www.datacenterworld.com/";
+
+  return {
+    id,
+    name,
+    title: (lead.title as string | null | undefined) ?? null,
+    company: (lead.company as string | null | undefined) ?? null,
+    conference: conferenceName,
+    session: (lead.session as string | null | undefined) ?? null,
+    email: (lead.email as string | null | undefined) ?? inbox,
+    score,
+    tier: tierFromScore(score),
+    scoreReason: String(
+      lead.reason ||
+        lead.whyThisPersonMatters ||
+        lead.scoreReason ||
+        `ICP score ${score}`,
+    ),
+    confidence: 0.85,
+    scoreBreakdown: scoreBreakdownFrom(score),
+    evidence: evidenceRaw.map((item, index) => {
+      const row = (item ?? {}) as Record<string, unknown>;
+      return {
+        label: String(row.label || (index === 0 ? "Session" : "Signal")),
+        excerpt: String(row.excerpt || row.label || ""),
+        sourceUrl: String(row.sourceUrl || sourceUrl),
+        confidence: Number(row.confidence ?? 0.85),
+      };
+    }),
+    outreachStage: "Identified",
+    topics: Array.isArray(lead.topics)
+      ? lead.topics.map(String)
+      : lead.session
+        ? [String(lead.session)]
+        : [],
+  };
+}
+
+function conferencesFromSequences(sequences: HydratedSequence[]): Conference[] {
+  const byName = new Map<string, { seq: HydratedSequence; count: number }>();
+  for (const seq of sequences) {
+    const name = String(seq.conference?.name || seq.lead?.conference || "").trim();
+    if (!name) continue;
+    const existing = byName.get(name);
+    if (existing) existing.count += 1;
+    else byName.set(name, { seq, count: 1 });
+  }
+
+  return [...byName.entries()].map(([name, { seq, count }]) => {
+    const start =
+      toIsoDate(seq.conference?.startDate, new Date().toISOString());
+    const end = toIsoDate(seq.conference?.endDate, start);
+    const sourceUrl =
+      seq.conference?.websiteUrl || "https://www.datacenterworld.com/";
+    return {
+      id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "conference",
+      name,
+      startDate: start,
+      endDate: end,
+      city: seq.conference?.location || "Dallas, TX",
+      sourceUrl,
+      speakerCount: count,
+      qualifiedCount: count,
+      status: "Analyzed" as const,
+    };
+  });
 }
 
 async function postFunnelEvent(
@@ -244,13 +356,18 @@ export type SignalDataValue = {
 const SignalDataContext = createContext<SignalDataValue | null>(null);
 
 function useSignalDataState(): SignalDataValue {
-  // Desk starts empty; paste a public conference URL and Analyze to fill via Agents 1→2.
+  // Seed from DCW schedule CSV demo; GTM /api/sequences bootstrap can replace with live Atlas data.
   const [url, setUrl] = useState(DEFAULT_LIVE_URL);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [pipelineIndex, setPipelineIndex] = useState(-1);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<QualifyNotice | null>(null);
+  const [notice, setNotice] = useState<QualifyNotice | null>({
+    mode: "demo",
+    message: `Demo: ${demoSpeakers.length} speakers from Data Center World Power 2026 schedule.`,
+    speakersIngested: demoSpeakers.length,
+    qualified: demoSpeakers.length,
+  });
   const [bootstrapped, setBootstrapped] = useState(false);
   const [systemHealth, setSystemHealth] = useState<SystemHealth>({
     status: "unknown",
@@ -261,22 +378,50 @@ function useSignalDataState(): SignalDataValue {
     },
   });
 
-  const [leads, setLeads] = useState<DeskLead[]>([]);
-  const [statuses, setStatuses] = useState<Record<string, LeadStatus>>({});
-  const [conferences, setConferences] = useState<Conference[]>([]);
-  const [selectedConferenceId, setSelectedConferenceId] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState("");
-  const [stats, setStats] = useState<QualifyResponse["stats"] | null>(null);
+  const [leads, setLeads] = useState<DeskLead[]>(() =>
+    stampDemoRecipientEmail(demoSpeakers, DEFAULT_DEMO_INBOX),
+  );
+  const [statuses, setStatuses] = useState<Record<string, LeadStatus>>(() => {
+    const next: Record<string, LeadStatus> = {};
+    for (const lead of demoSpeakers) next[lead.id] = "identified";
+    return next;
+  });
+  const [conferences, setConferences] = useState<Conference[]>(demoConferences);
+  const [selectedConferenceId, setSelectedConferenceId] = useState<string | null>(
+    demoConferences[0]?.id ?? null,
+  );
+  const [selectedId, setSelectedId] = useState(demoSpeakers[0]?.id ?? "");
+  const [stats, setStats] = useState<QualifyResponse["stats"] | null>({
+    speakersIngested: demoSpeakers.length,
+    afterDedupe: demoSpeakers.length,
+    qualified: demoSpeakers.length,
+    companiesFound: new Set(demoSpeakers.map((s) => s.company).filter(Boolean)).size,
+    scoredWithOpenAI: false,
+  });
   const [qualifyConference, setQualifyConference] = useState<
     QualifyResponse["conference"] | null
-  >(null);
+  >(() => {
+    const conf = demoConferences[0];
+    if (!conf) return null;
+    return {
+      name: conf.name,
+      startDate: conf.startDate,
+      endDate: conf.endDate,
+      location: conf.city,
+      websiteUrl: conf.sourceUrl,
+    };
+  });
 
-  const [sequenceSteps, setSequenceSteps] = useState<SequenceStep[]>([]);
+  const [sequenceSteps, setSequenceSteps] = useState<SequenceStep[]>(demoSequenceSteps);
   const [drafts, setDrafts] = useState<SequenceDraft[]>([]);
   const [sequenceLoading, setSequenceLoading] = useState(false);
   const [sequenceError, setSequenceError] = useState<string | null>(null);
   const [activeDraftAnchor, setActiveDraftAnchor] =
     useState<SequenceStep["anchor"]>("T-14");
+
+  const [sequenceByLeadId, setSequenceByLeadId] = useState<
+    Record<string, HydratedSequence>
+  >({});
 
   const [apiFunnel, setApiFunnel] = useState<Funnel | null>(null);
   const [funnelSource, setFunnelSource] = useState<"api" | "local">("local");
@@ -367,7 +512,7 @@ function useSignalDataState(): SignalDataValue {
         setStatuses((prev) => {
           const next = { ...prev };
           for (const [leadId, status] of Object.entries(payload.leadStatuses!)) {
-            if (leadId in next) next[leadId] = status;
+            next[leadId] = status;
           }
           return next;
         });
@@ -439,6 +584,121 @@ function useSignalDataState(): SignalDataValue {
     let cancelled = false;
 
     async function bootstrap() {
+      let hydratedFromLeads = false;
+      try {
+        const leadsRes = await fetch("/api/leads/latest", { cache: "no-store" });
+        if (leadsRes.ok) {
+          const payload = (await leadsRes.json()) as QualifyResponse;
+          if (!cancelled && payload.leads?.length) {
+            applyQualifyPayload(
+              payload,
+              {
+                setLeads,
+                setStats,
+                setQualifyConference,
+                setStatuses,
+                setConferences,
+                setSelectedConferenceId,
+                setSelectedId,
+              },
+              { postEvents: false, teamInbox },
+            );
+            setNotice({
+              mode: "live",
+              message: `Loaded ${payload.leads.length} speakers from latest qualification.`,
+              speakersIngested: payload.stats?.speakersIngested ?? payload.leads.length,
+              qualified: payload.stats?.qualified ?? payload.leads.length,
+            });
+            hydratedFromLeads = true;
+          }
+        }
+      } catch {
+        // Fall through to GTM sequences.
+      }
+
+      if (!hydratedFromLeads) {
+        try {
+          const response = await fetch("/api/sequences", { cache: "no-store" });
+          const payload = (await response.json()) as {
+            sequences?: HydratedSequence[];
+          };
+          const sequences = Array.isArray(payload.sequences)
+            ? payload.sequences
+            : [];
+          if (!cancelled && sequences.length > 0) {
+            const inbox = teamInbox || DEFAULT_DEMO_INBOX;
+            const nextLeads = sequences
+              .map((seq) => deskLeadFromHydrated(seq, inbox))
+              .filter((lead): lead is DeskLead => Boolean(lead));
+            const byLead: Record<string, HydratedSequence> = {};
+            for (const seq of sequences) {
+              if (seq.leadId) byLead[seq.leadId] = seq;
+            }
+            const nextConferences = conferencesFromSequences(sequences);
+
+            if (nextLeads.length > 0) {
+              setLeads(stampDemoRecipientEmail(nextLeads, inbox));
+              setSequenceByLeadId(byLead);
+              setStatuses((prev) => {
+                const next = { ...prev };
+                for (const lead of nextLeads) {
+                  if (!next[lead.id]) next[lead.id] = "identified";
+                }
+                return next;
+              });
+              if (nextConferences.length > 0) {
+                setConferences(nextConferences);
+                setSelectedConferenceId(
+                  (cur) => cur ?? nextConferences[0]?.id ?? null,
+                );
+              }
+              setSelectedId((cur) => cur || nextLeads[0]?.id || "");
+              setQualifyConference((prev) => {
+                if (prev) return prev;
+                const first = sequences[0]?.conference;
+                if (!first?.startDate) return prev;
+                return {
+                  name: first.name,
+                  startDate: first.startDate,
+                  endDate: first.endDate ?? null,
+                  location: first.location ?? null,
+                  websiteUrl:
+                    first.websiteUrl || "https://www.datacenterworld.com/",
+                };
+              });
+              setNotice({
+                mode: "live",
+                message: `Loaded ${nextLeads.length} speakers from GTM sequences.`,
+                speakersIngested: nextLeads.length,
+                qualified: nextLeads.length,
+              });
+            }
+          }
+        } catch {
+          // Desk can still run Analyze if stores are unavailable.
+        }
+      } else {
+        // Still warm sequence cache when leads came from Agent 2.
+        try {
+          const response = await fetch("/api/sequences", { cache: "no-store" });
+          const payload = (await response.json()) as {
+            sequences?: HydratedSequence[];
+          };
+          const sequences = Array.isArray(payload.sequences)
+            ? payload.sequences
+            : [];
+          if (!cancelled && sequences.length > 0) {
+            const byLead: Record<string, HydratedSequence> = {};
+            for (const seq of sequences) {
+              if (seq.leadId) byLead[seq.leadId] = seq;
+            }
+            setSequenceByLeadId(byLead);
+          }
+        } catch {
+          // Sequences are optional when leads already hydrated.
+        }
+      }
+
       await refreshFunnel();
       if (!cancelled) setBootstrapped(true);
     }
@@ -452,7 +712,23 @@ function useSignalDataState(): SignalDataValue {
   }, []);
 
   useEffect(() => {
-    if (!selected || !sequenceConference?.startDate) return;
+    if (!selected) return;
+
+    const cached = sequenceByLeadId[selected.id];
+    if (cached?.steps?.length) {
+      setSequenceSteps(cached.steps);
+      setDrafts(cached.drafts ?? []);
+      const firstScheduled =
+        cached.steps.find((s) => s.status === "Scheduled")?.anchor ??
+        cached.drafts?.[0]?.anchor ??
+        "T-14";
+      setActiveDraftAnchor(firstScheduled);
+      setSequenceLoading(false);
+      setSequenceError(null);
+      return;
+    }
+
+    if (!sequenceConference?.startDate) return;
 
     const lead = selected;
     const conference = {
@@ -479,6 +755,17 @@ function useSignalDataState(): SignalDataValue {
         const nextDrafts = (payload.drafts as SequenceDraft[]) ?? [];
         setSequenceSteps(nextSteps);
         setDrafts(nextDrafts);
+        setSequenceByLeadId((prev) => ({
+          ...prev,
+          [lead.id]: {
+            id: String(payload.id || lead.id),
+            leadId: lead.id,
+            lead: lead as unknown as Record<string, unknown>,
+            conference,
+            steps: nextSteps,
+            drafts: nextDrafts,
+          },
+        }));
         const firstScheduled =
           nextSteps.find((s) => s.status === "Scheduled")?.anchor ??
           nextDrafts[0]?.anchor ??
@@ -499,7 +786,7 @@ function useSignalDataState(): SignalDataValue {
     return () => {
       cancelled = true;
     };
-  }, [selected, sequenceConference]);
+  }, [selected, sequenceConference, sequenceByLeadId]);
 
   const analyzeConference = useCallback(async () => {
     setError(null);

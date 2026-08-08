@@ -128,6 +128,36 @@ def sequence_to_dashboard(seq_doc: dict) -> dict:
     return {
         "id": seq_doc.get("id"),
         "leadId": seq_doc.get("speaker_id") or speaker.get("id"),
+        "lead": {
+            "id": speaker.get("id") or seq_doc.get("speaker_id"),
+            "name": speaker.get("name") or "Speaker",
+            "title": speaker.get("title"),
+            "company": speaker.get("company"),
+            "conference": event.get("conference") or event.get("name") or "Conference",
+            "session": speaker.get("talk_title") or speaker.get("talk_topic") or event.get("name"),
+            "topics": [t for t in [speaker.get("talk_title"), speaker.get("talk_topic")] if t],
+            "email": speaker.get("email"),
+            "score": speaker.get("icp_score") or 0,
+            "reason": speaker.get("icp_reason"),
+            "whyThisPersonMatters": speaker.get("icp_reason"),
+            "evidence": [
+                {
+                    "label": "Session" if i == 0 else "Signal",
+                    "excerpt": str(bit),
+                    "sourceUrl": event.get("url") or "https://www.datacenterworld.com/",
+                    "confidence": 0.85,
+                }
+                for i, bit in enumerate(speaker.get("evidence") or [])
+                if bit
+            ],
+        },
+        "conference": {
+            "name": event.get("conference") or event.get("name") or "Conference",
+            "startDate": _iso(event.get("start_date")) or store.now().isoformat(),
+            "endDate": _iso(event.get("end_date")),
+            "location": event.get("location") or event.get("venue"),
+            "websiteUrl": event.get("url") or "https://www.datacenterworld.com/",
+        },
         "steps": steps,
         "drafts": drafts,
         "createdAt": _iso(seq_doc.get("created_at")) or store.now().isoformat(),

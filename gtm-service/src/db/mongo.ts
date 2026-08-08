@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { MongoClient, type Collection, type Db } from "mongodb";
+import { MongoClient, type Collection } from "mongodb";
 import { env } from "../config/env.js";
 import { computeFunnel } from "../pipeline/funnel.js";
 import type {
@@ -9,9 +9,14 @@ import type {
   SequenceRecord,
   SequenceStep,
 } from "../schemas/gtm.js";
+import {
+  hydrateAgent3Sequence,
+  isAgent3SequenceDoc,
+  stagesFromAgent3Docs,
+} from "./agent3Hydrate.js";
 
 let client: MongoClient | null = null;
-let db: Db | null = null;
+let db: import("mongodb").Db | null = null;
 
 /** In-memory fallback when Atlas is not configured. */
 const memorySequences = new Map<string, SequenceRecord>();
@@ -79,6 +84,48 @@ export async function saveSequence(record: SequenceRecord): Promise<boolean> {
   return true;
 }
 
+async function normalizeSequenceDoc(
+  doc: Record<string, unknown>,
+): Promise<SequenceRecord | null> {
+  if (isAgent3SequenceDoc(doc)) {
+    if (!db) return null;
+    return hydrateAgent3Sequence(db, doc);
+  }
+  // Dashboard-shaped docs already carry steps/drafts/lead.
+  if (Array.isArray(doc.steps) && doc.leadId) {
+    const lead =
+      doc.lead && typeof doc.lead === "object"
+        ? (doc.lead as SequenceRecord["lead"])
+        : null;
+    if (!lead || typeof lead.name !== "string" || !lead.name.trim()) {
+      return null;
+    }
+    const conference =
+      doc.conference && typeof doc.conference === "object"
+        ? (doc.conference as SequenceRecord["conference"])
+        : {
+            name: null,
+            startDate: new Date().toISOString(),
+            endDate: null,
+            location: null,
+            websiteUrl: undefined,
+          };
+    return {
+      id: String(doc.id ?? doc._id ?? ""),
+      leadId: String(doc.leadId),
+      lead: { ...lead, id: String(lead.id || doc.leadId) },
+      conference,
+      steps: doc.steps as SequenceRecord["steps"],
+      drafts: Array.isArray(doc.drafts)
+        ? (doc.drafts as SequenceRecord["drafts"])
+        : [],
+      createdAt: String(doc.createdAt ?? doc.created_at ?? new Date().toISOString()),
+      updatedAt: String(doc.updatedAt ?? doc.updated_at ?? new Date().toISOString()),
+    };
+  }
+  return null;
+}
+
 export async function listSequences(): Promise<SequenceRecord[]> {
   const collection = sequencesCollection();
   if (!collection) {
@@ -88,19 +135,86 @@ export async function listSequences(): Promise<SequenceRecord[]> {
   }
   const docs = await collection
     .find({})
-    .sort({ updatedAt: -1 })
-    .limit(100)
+    .sort({ updated_at: -1, updatedAt: -1 })
+    .limit(500)
     .toArray()
     .catch(() => []);
-  return docs.map((d) => d as unknown as SequenceRecord);
+
+  const hydrated: SequenceRecord[] = [];
+  for (const raw of docs) {
+    const record = await normalizeSequenceDoc(raw as Record<string, unknown>);
+    // Include Agent 3 / dashboard sequences even when emails/steps are empty so
+    // the desk can still hydrate speaker rows from `lead`.
+    if (record?.leadId && record.lead?.name) {
+      if (!record.steps?.length) {
+        record.steps = [
+          {
+            id: `${record.leadId}-placeholder`,
+            anchor: "T-14",
+            label: "T-14",
+            scheduledFor: record.conference.startDate,
+            subject: null,
+            status: "Planned",
+          },
+        ];
+      }
+      hydrated.push(record);
+    }
+  }
+  return hydrated.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 export async function getSequence(id: string): Promise<SequenceRecord | null> {
   const collection = sequencesCollection();
   if (!collection) return memorySequences.get(id) ?? null;
-  const doc = await collection.findOne({ id }).catch(() => null);
-  if (!doc) return memorySequences.get(id) ?? null;
-  return doc as unknown as SequenceRecord;
+
+  const byDashboardId = await collection.findOne({ id }).catch(() => null);
+  if (byDashboardId) {
+    const normalized = await normalizeSequenceDoc(
+      byDashboardId as Record<string, unknown>,
+    );
+    if (normalized) return normalized;
+  }
+
+  // Agent 3 sequences are keyed by Mongo _id / speaker_id.
+  const { ObjectId } = await import("mongodb");
+  if (ObjectId.isValid(id)) {
+    const byOid = await collection
+      .findOne({ _id: new ObjectId(id) })
+      .catch(() => null);
+    if (byOid) {
+      const normalized = await normalizeSequenceDoc(
+        byOid as Record<string, unknown>,
+      );
+      if (normalized) return normalized;
+    }
+  }
+
+  const bySpeaker = await collection.findOne({ speaker_id: id }).catch(() => null);
+  if (bySpeaker) {
+    const normalized = await normalizeSequenceDoc(
+      bySpeaker as Record<string, unknown>,
+    );
+    if (normalized) return normalized;
+  }
+
+  return memorySequences.get(id) ?? null;
+}
+
+export async function getSequenceByLeadId(
+  leadId: string,
+): Promise<SequenceRecord | null> {
+  const collection = sequencesCollection();
+  if (!collection) {
+    return (
+      [...memorySequences.values()].find((s) => s.leadId === leadId) ?? null
+    );
+  }
+  const doc =
+    (await collection.findOne({ leadId }).catch(() => null)) ||
+    (await collection.findOne({ speaker_id: leadId }).catch(() => null));
+  if (!doc) return null;
+  return normalizeSequenceDoc(doc as Record<string, unknown>);
 }
 
 export async function patchSequenceStep(
@@ -176,6 +290,23 @@ export async function getFunnel(): Promise<Funnel> {
   }
 
   const leadStatuses = latestStatusesFromEvents(events);
+
+  // When funnel_events is empty (Agent 3 import path), roll up from sequences.stage.
+  if (Object.keys(leadStatuses).length === 0 && sequencesCollection() && db) {
+    const seqDocs = await sequencesCollection()!
+      .find({})
+      .limit(500)
+      .toArray()
+      .catch(() => []);
+    Object.assign(leadStatuses, stagesFromAgent3Docs(seqDocs as Record<string, unknown>[]));
+    for (const raw of seqDocs) {
+      const doc = raw as Record<string, unknown>;
+      if (isAgent3SequenceDoc(doc)) continue;
+      const leadId = String(doc.leadId ?? "");
+      if (leadId && !leadStatuses[leadId]) leadStatuses[leadId] = "identified";
+    }
+  }
+
   const funnel = computeFunnel(
     Object.values(leadStatuses).map((status) => ({ status })),
   );

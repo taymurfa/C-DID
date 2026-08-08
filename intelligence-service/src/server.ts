@@ -7,6 +7,7 @@ import { closeMongo, connectMongo, isMongoConfigured } from "./db/mongo.js";
 import { isOpenAiEnabled } from "./openai/openaiClient.js";
 import { healthRoutes } from "./routes/health.js";
 import { qualifyRoutes } from "./routes/qualify.js";
+import { qualificationsRoutes } from "./routes/qualifications.js";
 
 export async function buildServer() {
   const app = Fastify({
@@ -44,6 +45,7 @@ export async function buildServer() {
 
   await app.register(healthRoutes);
   await app.register(qualifyRoutes);
+  await app.register(qualificationsRoutes);
 
   return app;
 }
