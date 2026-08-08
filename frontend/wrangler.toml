@@ -1,0 +1,13 @@
+# Cloudflare Wrangler — Pages or Workers deploy helper.
+# Install: npm i -D wrangler
+# Docs: https://developers.cloudflare.com/workers/wrangler/configuration/
+
+name = "okr"
+compatibility_date = "2025-01-01"
+
+# For Next.js on Cloudflare via OpenNext (recommended for this repo):
+#   npm i @opennextjs/cloudflare
+#   npx opennextjs-cloudflare build
+# Then set pages_build_output_dir to the path OpenNext prints (often under .open-next/).
+#
+# pages_build_output_dir = ".open-next/cloudflare"

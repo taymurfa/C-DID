@@ -1,0 +1,64 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./frontend/.env.local
+    environment:
+      # Browser calls Flask on host :5001 (published port). Route handlers use BACKEND_URL inside Docker network.
+      - NEXT_PUBLIC_API_URL=http://localhost:5001
+      - BACKEND_URL=http://backend:5001
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    env_file:
+      - ./backend/.env
+    environment:
+      # Compose network: DB host is the postgres service name, not localhost
+      - DATABASE_URL=postgresql+psycopg://postgres:postgres@postgres:5432/okr
+      - OKR_REPOSITORY=postgres
+      # Comma-separated Auth0 subs (e.g. auth0|abc) that always get admin (User management, etc.)
+      - APP_ADMIN_USER_IDS=${APP_ADMIN_USER_IDS:-}
+      # Comma-separated emails: admin on first login without pre-creating Mongo / knowing sub
+      - APP_ADMIN_EMAILS=${APP_ADMIN_EMAILS:-}
+      - APP_ORG_OWNER_EMAILS=${APP_ORG_OWNER_EMAILS:-}
+      - APP_DEFAULT_ORG_NAME=${APP_DEFAULT_ORG_NAME:-}
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-okr}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 5s
+
+volumes:
+  pgdata:

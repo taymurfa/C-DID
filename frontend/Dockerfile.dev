@@ -1,0 +1,17 @@
+# Development Dockerfile for Frontend
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Next.js usa PORT; fuerza 3000 para coincidir con docker-compose (3000:3000)
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev", "--", "-p", "3000", "-H", "0.0.0.0"]

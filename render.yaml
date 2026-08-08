@@ -1,0 +1,93 @@
+# Render Blueprint: https://render.com/docs/infrastructure-as-code
+# Deploy: New → Blueprint → connect repo → apply this file.
+#
+# Free tier: Web Services + PostgreSQL (limits apply; services may spin down when idle).
+# Set secrets in the Render dashboard — do not commit .env.
+#
+# Cross-links (same blueprint): BACKEND_URL on frontend + FRONTEND_URL on backend use
+# each service’s RENDER_EXTERNAL_URL. Auth0 callback URLs still must be set in Auth0 once URLs exist.
+# Env reference: docs/RENDER_ENV.md
+
+version: "1"
+
+databases:
+  - name: okr-postgres
+    databaseName: okr
+    user: okr
+    plan: free
+    region: oregon
+
+services:
+  - type: web
+    name: okr-backend
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /live
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: OKR_REPOSITORY
+        value: postgres
+      - key: DATABASE_URL
+        fromDatabase:
+          name: okr-postgres
+          property: connectionString
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      # Auto: public URL of okr-frontend (CORS + OAuth redirect to dashboard).
+      - key: FRONTEND_URL
+        fromService:
+          name: okr-frontend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      # --- Set in dashboard (see docs/RENDER_ENV.md) ---
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        sync: false
+      - key: APP_ADMIN_USER_IDS
+        sync: false
+      - key: APP_ADMIN_EMAILS
+        sync: false
+      - key: APP_ORG_OWNER_EMAILS
+        sync: false
+      - key: APP_DEFAULT_ORG_NAME
+        sync: false
+      # Required in production — do not set ALLOW_INSECURE_AUTH0_DEV on Render.
+      - key: AUTH0_ISSUER_BASE_URL
+        sync: false
+      - key: AUTH0_CLIENT_ID
+        sync: false
+      - key: AUTH0_CLIENT_SECRET
+        sync: false
+      - key: AUTH0_AUDIENCE
+        sync: false
+
+  - type: web
+    name: okr-frontend
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Auto: public URL of okr-backend (Next rewrites /api → Flask).
+      - key: BACKEND_URL
+        fromService:
+          name: okr-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      # Browser API base (Flask session cookie). Same as BACKEND_URL; layout injects at runtime (build may lack NEXT_PUBLIC_*).
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          name: okr-backend
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL

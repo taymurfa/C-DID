@@ -1,0 +1,1 @@
+ /Users/alvaromartin-pena/Desktop/HackathonTemplate/mobile/.dart_tool/flutter_build/1fa088a80e7c98f2d932493fd25836cd/native_assets.json:  /Users/alvaromartin-pena/Desktop/HackathonTemplate/mobile/.dart_tool/hooks_runner/shared/objective_c/build/5f31b8d621/objective_c.dylib
