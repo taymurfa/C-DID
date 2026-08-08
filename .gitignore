@@ -47,3 +47,7 @@ yarn-error.log*
 # Testing
 coverage/
 .nyc_output/
+
+# Codex local deliverables and scratch work
+/outputs/
+/work/
