@@ -1,7 +1,7 @@
 """MongoDB access + serialization helpers for Agent 3.
 
-Shares the same Atlas/local Mongo as the other agents. Reading events/speakers is read-only;
-we only write to `sequences` and `sequence_steps`.
+Uses the GTM database (`speaker_signal_gtm` by default). Reads/writes `events`
+(with embedded speakers), and owns `sequences` + `emails` (+ optional `funnel_events`).
 """
 from __future__ import annotations
 

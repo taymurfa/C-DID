@@ -13,8 +13,8 @@ ENV/
 .env
 .env.local
 .env*.local
-backend/.env
 frontend/.env.local
+speaker-signal/.env.local
 
 # Note: .env.example files should be committed to the repository
 
@@ -55,3 +55,7 @@ coverage/
 # Codex local deliverables and scratch work
 /outputs/
 /work/
+
+# Agent local envs / caches
+agents/**/.venv/
+agents/**/__pycache__/

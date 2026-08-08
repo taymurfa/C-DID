@@ -1,3 +1,10 @@
+-- DEPRECATED: Speaker Signal persists to MongoDB Atlas only.
+-- This Postgres/Supabase schema is retained for historical reference and is
+-- not used by the Docker demo stack. See root README collection map:
+--   speaker_signal_ingestion  → runs
+--   speaker_signal_intelligence → qualifications
+--   speaker_signal_gtm        → sequences, funnel_events
+
 create extension if not exists pgcrypto;
 
 create type public.analysis_status as enum ('queued', 'running', 'completed', 'failed');

@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { isMongoConfigured, isMongoConnected } from "../db/mongo.js";
 
 export async function healthRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -14,11 +15,20 @@ export async function healthRoutes(app: FastifyInstance): Promise<void> {
             properties: {
               service: { type: "string", example: "ingestion" },
               status: { type: "string", example: "ok" },
+              mongo: { type: "string", example: "ok" },
             },
           },
         },
       },
     },
-    async () => ({ service: "ingestion", status: "ok" }),
+    async () => ({
+      service: "ingestion",
+      status: "ok",
+      mongo: !isMongoConfigured()
+        ? "skipped"
+        : isMongoConnected()
+          ? "ok"
+          : "down",
+    }),
   );
 }

@@ -26,5 +26,5 @@ COPY --from=build /app/dist ./dist
 
 EXPOSE 8002
 
-# Config comes from the environment (see docker-compose env_file: ./backend/.env).
+# Config comes from the environment (Compose env_file: repo-root .env).
 CMD ["node", "dist/server.js"]

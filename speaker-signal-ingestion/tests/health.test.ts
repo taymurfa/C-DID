@@ -17,7 +17,10 @@ describe("GET /health", () => {
   it("returns the ingestion status payload", async () => {
     const res = await app.inject({ method: "GET", url: "/health" });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ service: "ingestion", status: "ok" });
+    const body = res.json();
+    expect(body.service).toBe("ingestion");
+    expect(body.status).toBe("ok");
+    expect(["ok", "skipped", "down"]).toContain(body.mongo);
   });
 
   it("rejects an invalid /ingest body", async () => {

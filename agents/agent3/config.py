@@ -1,8 +1,8 @@
 """Agent 3 (Outreach / GTM Sequences) — configuration.
 
-All agents share one MongoDB. Agent 3 reads the events + qualified speakers that Persons 1 & 2
-produce, and writes back `sequences` + `sequence_steps` + funnel state. Nothing here is
-OKR/legacy; this is a self-contained Person-3 service.
+Agent 3 owns the GTM Mongo database (`speaker_signal_gtm` by default). It can
+read an `events` collection with embedded qualified speakers (automation path)
+or accept dashboard `lead` + `conference` payloads via the compat API.
 """
 from __future__ import annotations
 
@@ -15,13 +15,21 @@ try:  # python-dotenv is in requirements; degrade gracefully if it's missing.
 except ModuleNotFoundError:
     pass
 
-# --- Mongo (shared across all 4 agents) -------------------------------------------------
+# --- Mongo ------------------------------------------------------------------
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "hackathon_db")
+# Prefer Compose's MONGODB_DB; keep MONGODB_DB_NAME as a back-compat alias.
+MONGODB_DB_NAME = (
+    os.getenv("MONGODB_DB")
+    or os.getenv("MONGODB_DB_NAME")
+    or "speaker_signal_gtm"
+)
 
-# Collections Persons 1 & 2 hand us (input) and we own (output). See README "Data contract".
+# Collections: events (input / materialised) + sequences/emails (owned).
 COLL_EVENTS = os.getenv("COLL_EVENTS", "events")  # speakers are embedded in each event document
-COLL_SEQUENCES = os.getenv("COLL_SEQUENCES", "sequences")
+COLL_SEQUENCES = os.getenv(
+    "MONGODB_SEQUENCES_COLLECTION",
+    os.getenv("COLL_SEQUENCES", "sequences"),
+)
 COLL_EMAILS = os.getenv("COLL_EMAILS", "emails")
 
 # --- OpenAI (optional — service degrades to deterministic templates without a key) -------
@@ -31,7 +39,7 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 # --- Outreach identity (who the drafted emails are from) --------------------------------
 SENDER_NAME = os.getenv("SENDER_NAME", "Kirill Cheldishkin")
 SENDER_COMPANY = os.getenv("SENDER_COMPANY", "Candid")
-SENDER_EMAIL = os.getenv("SENDER_EMAIL", "kirill.cheldishkin@gmail.com")
+SENDER_EMAIL = os.getenv("SENDER_EMAIL") or os.getenv("SMTP_FROM") or "info@jobersteadt.com"
 OPT_OUT_LINE = os.getenv(
     "OPT_OUT_LINE",
     "If you'd rather not hear from me, just reply \"no thanks\" and I'll close the loop.",
@@ -39,12 +47,13 @@ OPT_OUT_LINE = os.getenv(
 
 # --- Email delivery ---------------------------------------------------------------------
 # SEND_MODE: "mock" logs and flips the flag (nothing leaves the machine);
-#            "real" actually sends via SMTP (needs SMTP_PASSWORD — a Gmail App Password).
+#            "real" actually sends via SMTP (Zoho by default; needs SMTP_PASSWORD).
 SEND_MODE = os.getenv("SEND_MODE", "mock").strip().lower()
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.zoho.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", SENDER_EMAIL)          # gmail login = the From address
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").strip()    # Gmail App Password (not your login pw)
+SMTP_USER = os.getenv("SMTP_USER", "").strip()
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").strip().strip("\"'")
+SMTP_FROM = os.getenv("SMTP_FROM", "").strip() or SENDER_EMAIL
 
 # --- Send timing ------------------------------------------------------------------------
 # Each cadence step is scheduled at this UTC time on its offset day (minute precision).
@@ -56,5 +65,13 @@ GENERATE_INTERVAL_SEC = int(os.getenv("GENERATE_INTERVAL_SEC", "30"))  # scan fo
 SEND_INTERVAL_SEC = int(os.getenv("SEND_INTERVAL_SEC", "15"))          # send due emails
 
 # --- Service ----------------------------------------------------------------------------
-PORT = int(os.getenv("AGENT3_PORT", "8003"))
-CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",") if o.strip()]
+# GTM_PORT matches docker-compose / prior gtm-service; AGENT3_PORT is an alias.
+PORT = int(os.getenv("GTM_PORT") or os.getenv("AGENT3_PORT") or "8003")
+CORS_ORIGINS = [
+    o.strip()
+    for o in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:3000,http://localhost:3001",
+    ).split(",")
+    if o.strip()
+]

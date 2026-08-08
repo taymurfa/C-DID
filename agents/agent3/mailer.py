@@ -2,9 +2,8 @@
 
 Two modes (config.SEND_MODE):
   • "mock" — log the email, send nothing (default; the POC guardrail).
-  • "real" — actually send via SMTP (Gmail). Requires SMTP_PASSWORD = a Gmail *App Password*
-             (Google account → Security → 2-Step Verification → App passwords). Your normal
-             login password will NOT work.
+  • "real" — actually send via SMTP (Zoho by default). Requires SMTP_USER + SMTP_PASSWORD.
+             Copy values from HackathonTemplate/backend/.env.
 
 `deliver()` raises on failure so the caller can release the email for retry.
 """
@@ -28,18 +27,24 @@ def deliver(to_email: str, subject: str, body: str) -> str:
 
     if not to_email:
         raise ValueError("no recipient address on this email")
-    if not config.SMTP_PASSWORD:
-        raise RuntimeError("SEND_MODE=real but SMTP_PASSWORD is empty (set a Gmail App Password)")
+    if not config.SMTP_USER or not config.SMTP_PASSWORD:
+        raise RuntimeError("SEND_MODE=real but SMTP_USER/SMTP_PASSWORD is empty")
 
+    from_addr = config.SMTP_FROM or config.SENDER_EMAIL
     msg = EmailMessage()
-    msg["From"] = f"{config.SENDER_NAME} <{config.SENDER_EMAIL}>"
+    msg["From"] = f"{config.SENDER_NAME} <{from_addr}>"
     msg["To"] = to_email
     msg["Subject"] = subject
     msg.set_content(body)
 
-    with smtplib.SMTP(config.SMTP_HOST, config.SMTP_PORT, timeout=20) as smtp:
-        smtp.starttls()
-        smtp.login(config.SMTP_USER, config.SMTP_PASSWORD)
-        smtp.send_message(msg)
+    if config.SMTP_PORT == 465:
+        with smtplib.SMTP_SSL(config.SMTP_HOST, config.SMTP_PORT, timeout=20) as smtp:
+            smtp.login(config.SMTP_USER, config.SMTP_PASSWORD)
+            smtp.send_message(msg)
+    else:
+        with smtplib.SMTP(config.SMTP_HOST, config.SMTP_PORT, timeout=20) as smtp:
+            smtp.starttls()
+            smtp.login(config.SMTP_USER, config.SMTP_PASSWORD)
+            smtp.send_message(msg)
     print(f"[mailer:real] sent → {to_email} | {subject!r}", flush=True)
     return "real"

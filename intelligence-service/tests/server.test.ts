@@ -28,7 +28,10 @@ describe("HTTP server", () => {
   it("GET /health returns ok", async () => {
     const res = await app.inject({ method: "GET", url: "/health" });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ service: "intelligence", status: "ok" });
+    const body = res.json();
+    expect(body.service).toBe("intelligence");
+    expect(body.status).toBe("ok");
+    expect(["ok", "skipped", "down"]).toContain(body.mongo);
   });
 
   it("POST /qualify scores the bare ingestion payload", async () => {

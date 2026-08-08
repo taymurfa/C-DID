@@ -29,7 +29,7 @@ COPY --from=build /app/dist ./dist
 
 EXPOSE 8001
 
-# Config comes from the environment (see docker-compose env_file: ../backend/.env).
-# The app also tries to load a shared backend/.env by walking up from its module
-# path; a missing file is harmless because real values arrive via env vars.
+# Config comes from the environment (Compose env_file: repo-root .env).
+# The app also walks up looking for a root .env when run locally; a missing
+# file is harmless because real values arrive via env vars.
 CMD ["node", "dist/server.js"]

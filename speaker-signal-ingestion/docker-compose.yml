@@ -6,12 +6,11 @@ services:
     container_name: speaker-signal-ingestion
     ports:
       - "8001:8001"
-    # Single source of truth for OPENAI_API_KEY / MONGODB_URI etc. lives in the
-    # shared backend/.env. No service-local .env is used.
+    # Shared secrets from the repo-root .env (MONGODB_URI, OPENAI_API_KEY, …).
     env_file:
-      - ../backend/.env
+      - ../.env
     environment:
-      # Keep Agent 1 on 8001 regardless of any generic PORT in backend/.env.
+      # Keep Agent 1 on 8001 regardless of any generic PORT in the shared .env.
       INGESTION_PORT: "8001"
       HOST: "0.0.0.0"
       # Start grabbing on boot: discover from these seeds, then auto-ingest every

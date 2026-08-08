@@ -4,36 +4,39 @@ import { fileURLToPath } from "node:url";
 import { config as loadDotenv } from "dotenv";
 
 /**
- * Resolve the single source of truth for configuration: the shared
- * `backend/.env`. We deliberately never read a service-local `.env` - the
- * backend file is the only one that should provide OPENAI_API_KEY / MONGODB_URI.
- *
- * We walk up from this module's own location (not the current working
- * directory) so the path holds no matter where the process is launched from or
- * whether we're running source (tsx) or built output (dist). `ENV_FILE` still
- * wins if explicitly set.
+ * Prefer ENV_FILE, then walk up for the repo-root `.env`.
+ * Missing files are fine — Compose injects real values via the environment.
  */
-function resolveBackendEnv(): string {
+function resolveEnvFile(): string {
   if (process.env.ENV_FILE) return process.env.ENV_FILE;
   let dir = dirname(fileURLToPath(import.meta.url));
   for (let i = 0; i < 8; i++) {
-    const candidate = resolve(dir, "backend", ".env");
+    const candidate = resolve(dir, ".env");
     if (existsSync(candidate)) return candidate;
     const parent = dirname(dir);
     if (parent === dir) break;
     dir = parent;
   }
-  // Last-resort fallback to the original cwd-relative convention.
-  return resolve(process.cwd(), "..", "backend", ".env");
+  return resolve(process.cwd(), "..", ".env");
 }
 
-loadDotenv({ path: resolveBackendEnv() });
+loadDotenv({ path: resolveEnvFile() });
 
 function readInt(name: string, fallback: number): number {
   const raw = process.env[name];
   if (!raw) return fallback;
   const parsed = Number.parseInt(raw, 10);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+/** Prefer service-specific port, then Render's PORT, then local default. */
+function readListenPort(servicePortKey: string, localDefault: number): number {
+  const dedicated = process.env[servicePortKey]?.trim();
+  if (dedicated) {
+    const parsed = Number.parseInt(dedicated, 10);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return readInt("PORT", localDefault);
 }
 
 function readBool(name: string, fallback: boolean): boolean {
@@ -60,9 +63,8 @@ function readCsv(name: string, fallback: string[]): string[] {
 }
 
 export const env = {
-  // Use a dedicated INGESTION_PORT so we stay on 8001 and never inherit the
-  // backend's generic PORT (e.g. 5001) from the shared .env.
-  port: readInt("INGESTION_PORT", 8001),
+  // INGESTION_PORT for Compose; PORT for Render; else 8001.
+  port: readListenPort("INGESTION_PORT", 8001),
   host: process.env.HOST ?? "0.0.0.0",
 
   openaiApiKey: process.env.OPENAI_API_KEY?.trim() || undefined,

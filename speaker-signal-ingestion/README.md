@@ -92,7 +92,7 @@ The service listens on **port 8001** by default.
 
 The image is based on the official Playwright image, so Chromium and its OS
 dependencies are baked in (the crawler uses them only as a fallback for
-JS-rendered pages). Configuration is read from the shared **`backend/.env`** via
+JS-rendered pages). Configuration is read from the repo-root **`.env`** via
 Compose's `env_file`, so no service-local `.env` is needed.
 
 ```bash
@@ -112,22 +112,20 @@ To build/run just the image without Compose:
 
 ```bash
 docker build -t speaker-signal-ingestion .
-docker run --env-file ../backend/.env -e BOOTSTRAP_SEEDS="https://www.7x24exchange.org/" -p 8001:8001 speaker-signal-ingestion
+docker run --env-file ../.env -e BOOTSTRAP_SEEDS="https://www.7x24exchange.org/" -p 8001:8001 speaker-signal-ingestion
 ```
 
 ### Configuration
 
-Config is loaded from the shared **`backend/.env`** (`../backend/.env` relative
-to this service), so it reuses the system's `OPENAI_API_KEY` and `MONGODB_URI`.
+Config is loaded from the repo-root **`.env`** (`../.env` relative to this
+service), so it reuses the system's `OPENAI_API_KEY` and `MONGODB_URI`.
 Set `ENV_FILE=/path/to/.env` to point somewhere else.
 
-- The service always runs on **8001** (via `INGESTION_PORT`), and deliberately
-  ignores the backend's generic `PORT` so the two don't collide.
+- The service always runs on **8001** (via `INGESTION_PORT`).
 - Mongo runs are written to the `speaker_signal_ingestion` database (override
-  with `MONGODB_DB`) on the shared cluster, keeping ingestion data separate from
-  the backend's database.
+  with `MONGODB_DB`) on the shared cluster.
 
-Optional overrides you can add to `backend/.env`:
+Optional overrides you can add to the root `.env`:
 
 ```
 INGESTION_PORT=8001

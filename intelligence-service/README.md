@@ -61,16 +61,15 @@ The service listens on **port 8002** by default (Agent 1 owns 8001).
 
 ### Configuration
 
-Config is loaded from the shared **`backend/.env`** (`../backend/.env` relative
-to this service), so it reuses the system's `OPENAI_API_KEY` and `MONGODB_URI`.
+Config is loaded from the repo-root **`.env`** (`../.env` relative to this
+service), so it reuses the system's `OPENAI_API_KEY` and `MONGODB_URI`.
 Set `ENV_FILE=/path/to/.env` to point somewhere else.
 
-- The service always runs on **8002** (via `INTELLIGENCE_PORT`), and deliberately
-  ignores the backend's generic `PORT` so the services don't collide.
+- The service always runs on **8002** (via `INTELLIGENCE_PORT`).
 - Qualification runs are written to the `speaker_signal_intelligence` database
-  (override with `MONGODB_DB`), separate from the backend and from Agent 1.
+  (override with `MONGODB_DB`), separate from Agent 1.
 
-Optional overrides you can add to `backend/.env`:
+Optional overrides you can add to the root `.env`:
 
 ```
 INTELLIGENCE_PORT=8002

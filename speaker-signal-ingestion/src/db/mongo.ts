@@ -9,6 +9,10 @@ export function isMongoConfigured(): boolean {
   return Boolean(env.mongoUri);
 }
 
+export function isMongoConnected(): boolean {
+  return Boolean(db);
+}
+
 /**
  * Connect to MongoDB Atlas if configured. Safe to call once at boot; a missing
  * MONGODB_URI is not an error (the service simply skips persistence).

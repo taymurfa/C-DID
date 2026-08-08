@@ -46,6 +46,13 @@ a { color: inherit; }
 .pipeline-title span { font-size: 12px; }
 .pipeline-title i, .funnel-meta i, .sequence-footer i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
 .pipeline-title i.dot-live { box-shadow: 0 0 0 4px rgba(120, 207, 130, .12); animation: pulse 1.2s infinite; }
+.pipeline-title i.dot-warn { background: #d4a017; }
+.agent-health-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 4px; }
+.agent-health-dot { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; letter-spacing: .02em; opacity: .85; }
+.agent-health-dot i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #888; }
+.agent-health-dot.agent-ok i { background: var(--green); }
+.agent-health-dot.agent-down i { background: #d95c5c; }
+.agent-health-dot.agent-unknown i { background: #888; }
 .pipeline-rail > small { display: block; color: var(--green); font-size: 9px; margin-top: 7px; }
 .pipeline-steps { margin-top: 11px; }
 .pipeline-steps > div { min-height: 48px; display: flex; gap: 9px; position: relative; }

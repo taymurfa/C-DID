@@ -1,5 +1,5 @@
 {
-  "name": "okr",
+  "name": "atlas-signal",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -25,12 +25,14 @@
     "lucide-react": "^0.487.0",
     "motion": "^12.38.0",
     "next": "16.1.6",
+    "openai": "^4.77.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-leaflet": "^5.0.0",
     "recharts": "^2.15.2",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^3.2.0"
+    "tailwind-merge": "^3.2.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

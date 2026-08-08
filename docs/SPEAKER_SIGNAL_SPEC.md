@@ -1,8 +1,11 @@
 # Speaker Signal — Product Spec (Hackathon POC)
 
-> This repo started as an OKR platform boilerplate. We are repurposing it into **Speaker Signal**.
-> This file is the source of truth for **what we are building**. `CLAUDE.md` covers **how** (stack,
-> conventions, run commands). Read both before writing code.
+> This file is the source of truth for **what we are building** (Speaker Signal).
+>
+> **Live stack:** Agents run as microservices on MongoDB Atlas —
+> Agent 1 `speaker-signal-ingestion` (:8001), Agent 2 `intelligence-service` (:8002),
+> Agent 3 `gtm-service` / `agents/agent3` (:8003), dashboard `speaker-signal` (:3000).
+> Prefer the Mongo + HTTP handoff shapes used by those services when implementing.
 
 ## 1. The pitch in one line
 
@@ -64,11 +67,10 @@ type + topic, in one sentence.
   their company). Every draft includes an **easy opt-out**. Not a spam cannon.
 - POC does **not** actually send email. Sending is **mocked** (status transitions only). Say so in the UI.
 
-## 5. Data model (Postgres, SQLAlchemy 2.0 typed models)
+## 5. Data model
 
-New tables in `backend/app/models_sql/speaker_signal.py`. UUID string PKs, `created_at/updated_at`
-timezone-aware — match the existing `okr.py` style exactly. One new Alembic migration:
-`0003_speaker_signal.py`.
+Persistence lives in MongoDB Atlas collections owned by each agent service
+(`speaker_signal_ingestion` / `_intelligence` / `_gtm`). Conceptual shape (names vary slightly by service):
 
 ```
 conferences
@@ -122,81 +124,52 @@ sequence_steps
   created_at, updated_at
 ```
 
-## 6. Backend API (Flask blueprint `speaker_signal.py`, prefix `/api`)
+## 6. Agent APIs (live stack)
 
-Register in `app/__init__.py`. Follow the existing route/blueprint style. Auth: reuse `require_auth`,
-but for the demo run with `ALLOW_INSECURE_AUTH0_DEV=1` so no Auth0 tenant is needed.
+Auth is not required for the demo. Implement against the microservice packages:
+
+- Agent 1 `speaker-signal-ingestion` (`:8001`) — discover / ingest
+- Agent 2 `intelligence-service` (`:8002`) — qualify / rank
+- Agent 3 `gtm-service` (`:8003`) — sequences / funnel
+
+Dashboard proxies live under `speaker-signal/app/api/*` (and the optional `frontend/app/api/*` shell).
 
 ```
-GET  /api/conferences                      -> list (calendar); newest/upcoming first
-POST /api/conferences/discover             -> simulate self-updating calendar: add newly "announced" events
-GET  /api/conferences/<id>                 -> one conference + counts
-GET  /api/conferences/<id>/speakers        -> speakers ranked by icp_score desc (?min_score=)
-
-POST /api/conferences/ingest               -> body {url}. Scrape+parse+dedupe+score. Returns conference + speakers.
-                                              THE money endpoint. Idempotent on conference url.
-
-GET  /api/speakers/<id>                     -> speaker detail (+ sequence if enrolled)
-POST /api/speakers/<id>/enroll              -> create sequence + generate event-anchored steps with drafted emails
-
-GET  /api/sequences                         -> Juicebox-style list w/ per-step status + aggregate rates
-POST /api/sequences/<id>/advance            -> move to next funnel stage (mock)
-POST /api/sequence-steps/<id>/mark          -> body {status} sent|opened|replied|meeting (mock)
-
-GET  /api/funnel                            -> stage counts + conversion/drop-off for the funnel view
+POST /ingest | /discover     -> Agent 1 conference discovery + scrape
+POST /qualify                -> Agent 2 ICP score + rank
+POST /sequences | /funnel    -> Agent 3 outreach + funnel
 ```
 
-### Ingestion pipeline (`app/services/`)
-- `conference_scraper.py` — fetch HTML (`requests`, honest UA, timeout, respect robots). Clean with
-  BeautifulSoup. Then **LLM extraction** (OpenAI, already a dependency) with a strict JSON schema:
-  list of `{name, title, company, talk_title, talk_topic}`. LLM extraction handles varied site layouts
-  better than brittle CSS selectors. Keep the cleaned text chunked/truncated to stay within context.
-- `icp_scoring.py` — hybrid: deterministic signal boosts (title keywords, company-type classification,
-  topic keywords from §2) + an LLM pass for the reason sentence and edge cases. Return score 0–100,
-  breakdown, and reason. Deterministic first so it's fast and demoable without a key.
-- `dedupe.py` — normalize `name`+`company` → `dedup_key`; merge duplicates across sessions/events.
-- `email_drafting.py` — given a speaker + conference + step kind, draft subject + body. Must reference
-  their talk/company, be short, and include an opt-out line.
-- `enrichment.py` — LinkedIn URL / email guess. POC may stub (pattern-based email, e.g.
-  `first.last@company.com`) and clearly mark as unverified.
+Dashboard-facing thin proxies:
 
-**Demo reliability:** ship a seed with 2–3 real energy conferences and a bank of realistic speakers so
-the whole flow demos even if a live site is down or no API key is present. `POST /ingest` should fall
-back to seeded parse results for known demo URLs. See `backend/seed_data.py` pattern.
+```
+POST /api/analyze            -> scrape preview / demo
+POST /api/qualify            -> Agent 1 → Agent 2
+POST /api/sequence           -> Agent 3 drafts + cadence
+```
 
-## 7. Frontend (Next.js App Router, `frontend/app/`)
+**Demo reliability:** ship fixtures so the whole flow demos even if a live site is down or no API key
+is present. Without `OPENAI_API_KEY`, agents use deterministic fallbacks. Without `MONGODB_URI`,
+results return over HTTP but are not persisted.
 
-Use existing primitives: `components/ui/*`, `@/lib/api.ts` for calls, **Recharts** for the funnel,
-**Leaflet** (`react-leaflet`) for a conference map, `motion` for the "explorable/addictive" feel,
-`sonner` for toasts. New pages:
+## 7. Frontend (Next.js)
 
-- `app/events/page.tsx` — self-updating **calendar/list** of conferences (+ optional map). "Discover new
-  events" button → `POST /conferences/discover`. Card per event: name, date, location, #ICP-fit speakers.
-- `app/events/[id]/page.tsx` — **ranked speaker list** for one event. Each row: name, title, company,
-  talk topic, ICP score (badge/meter), the reason, and an **Enroll** button. Filter by min score. This
-  is the "addictive, explorable" surface — make it feel great.
-- `app/ingest/page.tsx` — paste a conference URL → run ingest → show the scored list appearing.
-- `app/speakers/[id]/page.tsx` — speaker detail + their sequence (steps, drafted emails, statuses).
-- `app/sequences/page.tsx` — **Sequences view** (Juicebox-style): every enrolled speaker, their steps,
-  and aggregate open/reply/meeting rates.
-- `app/funnel/page.tsx` — **funnel viz** with Recharts: counts and drop-off across the 7 stages.
+Primary demo UI: `speaker-signal/` (Compose service `dashboard` on `:3000`).
+Optional Atlas + Signal shell: `frontend/` (home toggles Project Atlas ↔ Signal Desk).
 
-Add these to the sidebar/nav. It's fine to leave the OKR pages in place; just don't route to them.
+The desk should surface calendar, ranked speakers, sequences, and funnel in one place.
 
-## 8. Suggested build order (one day)
-1. Models + migration `0003` + seed data. (`make migrate`)
-2. `GET /conferences`, `GET /conferences/<id>/speakers`, seed-backed. Wire `events` + `events/[id]` pages.
-3. `POST /ingest` with scraper + ICP scoring (deterministic first). Wire `ingest` page.
-4. `POST /speakers/<id>/enroll` + email drafting. Wire `speakers/[id]` + `sequences` page.
-5. `GET /funnel` + `funnel` page (Recharts).
-6. `POST /conferences/discover` (self-updating calendar) + polish/motion.
-
-Cut from the bottom if time runs short. Steps 1–4 are the demo core.
+## 8. Suggested build order
+1. Agent 1 ingest + Agent 2 qualify wired through dashboard proxies.
+2. Signal Desk ranked list with score breakdown + reason.
+3. Agent 3 sequences + funnel persistence.
+4. Discover / calendar polish.
+5. Demo-mode fixtures so judges need no credentials.
 
 ## 9. Definition of done (demo script)
-1. Open **Events** → see a self-maintaining calendar of energy conferences.
-2. **Ingest** a conference URL → watch scored, deduped, ICP-ranked speakers appear with reasons + topics.
-3. Open an event → the ranked speaker list; enroll a top speaker.
-4. See the **event-anchored sequence** with drafted, personalized emails (T–2w … post-event).
-5. **Sequences** view shows open/reply/meeting rates; **Funnel** shows conversion + drop-off.
-6. Hit **Discover** → a newly "announced" event appears without anyone adding it by hand.
+1. Open the Signal Desk → see conferences / calendar context.
+2. **Analyze conference** → scored, deduped, ICP-ranked speakers with reasons + topics.
+3. Select a top speaker → inspect evidence and the event-anchored cadence.
+4. Review drafted, personalized emails (T−14 → T+2) with opt-out.
+5. **Funnel** shows conversion + drop-off from identified → conversation booked.
+
