@@ -1,22 +1,34 @@
 "use client";
 
 import { ChevronDown, Map, Moon, Radio, Sun } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { SignalDesk, SIGNAL_PAGES, type SignalPage } from "@/components/SignalDesk";
 import { SignalDataProvider } from "@/lib/signal-data-context";
 import "../signal-desk.css";
 
 type View = "map" | "signals";
 type Theme = "light" | "dark";
+const THEME_CHANGE_EVENT = "atlas-theme-change";
 
 function getInitialTheme(): Theme {
   if (typeof window === "undefined") return "light";
+  const savedTheme = localStorage.getItem("atlas-theme");
+  if (savedTheme === "light" || savedTheme === "dark") return savedTheme;
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
+}
+
+function subscribeToTheme(onStoreChange: () => void) {
+  window.addEventListener(THEME_CHANGE_EVENT, onStoreChange);
+  window.addEventListener("storage", onStoreChange);
+  return () => {
+    window.removeEventListener(THEME_CHANGE_EVENT, onStoreChange);
+    window.removeEventListener("storage", onStoreChange);
+  };
 }
 
 export default function AppPage() {
   const [view, setView] = useState<View>("map");
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const theme = useSyncExternalStore(subscribeToTheme, getInitialTheme, () => "light");
   const [signalPage, setSignalPage] = useState<SignalPage>("calendar");
   const [signalMenuOpen, setSignalMenuOpen] = useState(false);
   const signalMenuRef = useRef<HTMLDivElement>(null);
@@ -52,7 +64,11 @@ export default function AppPage() {
   }
 
   function toggleTheme() {
-    setTheme((current) => current === "dark" ? "light" : "dark");
+    const nextTheme: Theme = theme === "dark" ? "light" : "dark";
+    document.documentElement.classList.toggle("dark", nextTheme === "dark");
+    document.documentElement.dataset.theme = nextTheme;
+    localStorage.setItem("atlas-theme", nextTheme);
+    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
   }
 
   return (
@@ -123,7 +139,7 @@ export default function AppPage() {
           <iframe
             ref={mapFrameRef}
             className="atlas-frame"
-            src={`/ercot-atlas.html?theme=${theme}`}
+            src={`/ercot-atlas.html?theme=${theme}&v=3`}
             title="ERCOT Power Project Atlas"
             onLoad={() => mapFrameRef.current?.contentWindow?.postMessage({ type: "atlas-theme", theme }, window.location.origin)}
           />

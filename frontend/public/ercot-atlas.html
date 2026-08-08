@@ -986,10 +986,12 @@ function onThemeChange() {
   draw();
 }
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', onThemeChange);
-new MutationObserver(onThemeChange).observe(document.documentElement, { attributeFilter:['data-theme'] });
 window.addEventListener('message', (event) => {
   if (event.origin !== window.location.origin || event.data?.type !== 'atlas-theme') return;
-  if (event.data.theme === 'light' || event.data.theme === 'dark') document.documentElement.dataset.theme = event.data.theme;
+  if (event.data.theme === 'light' || event.data.theme === 'dark') {
+    document.documentElement.dataset.theme = event.data.theme;
+    onThemeChange();
+  }
 });
 
 refreshTheme();
