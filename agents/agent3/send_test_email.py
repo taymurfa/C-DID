@@ -18,7 +18,7 @@ def main() -> int:
     to = (
         (sys.argv[1] if len(sys.argv) > 1 else "").strip()
         or os.getenv("TEST_TO_EMAIL", "").strip()
-        or "kirill.cheldishkin2105@gmail.com"
+        or "faruquitaymur@gmail.com"
     )
     print("SMTP test (agent3)")
     print(f"  SEND_MODE={config.SEND_MODE}")

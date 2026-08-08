@@ -11,7 +11,7 @@ async function main() {
   const to =
     process.argv[2]?.trim() ||
     env.testToEmail ||
-    "kirill.cheldishkin2105@gmail.com";
+    "faruquitaymur@gmail.com";
 
   console.log("SMTP test");
   console.log(`  SEND_MODE=${env.sendMode}`);

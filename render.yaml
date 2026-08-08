@@ -102,7 +102,7 @@ services:
       - key: SMTP_FROM
         sync: false
       - key: TEST_TO_EMAIL
-        value: kirill.cheldishkin2105@gmail.com
+        value: faruquitaymur@gmail.com
 
   # --- GridConnects web (landing + product) ------------------------------------
   - type: web

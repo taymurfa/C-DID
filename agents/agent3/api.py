@@ -138,7 +138,7 @@ def create_app() -> Flask:
         to = (
             str(body.get("to") or "").strip()
             or os.getenv("TEST_TO_EMAIL", "").strip()
-            or "kirill.cheldishkin2105@gmail.com"
+            or "faruquitaymur@gmail.com"
         )
         if config.SEND_MODE == "real" and not config.SMTP_PASSWORD:
             return (

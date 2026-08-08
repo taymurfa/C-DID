@@ -67,7 +67,7 @@ export const env = {
     undefined,
   testToEmail:
     process.env.TEST_TO_EMAIL?.trim() ||
-    "kirill.cheldishkin2105@gmail.com",
+    "faruquitaymur@gmail.com",
   smtpHost: process.env.SMTP_HOST?.trim() || "smtp.zoho.com",
   smtpPort: readInt("SMTP_PORT", 587),
   smtpUser: process.env.SMTP_USER?.trim() || undefined,

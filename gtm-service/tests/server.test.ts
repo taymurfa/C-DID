@@ -96,12 +96,12 @@ describe("gtm-service HTTP", () => {
     const res = await app.inject({
       method: "POST",
       url: "/mail/test",
-      payload: { to: "kirill.cheldishkin2105@gmail.com" },
+      payload: { to: "faruquitaymur@gmail.com" },
     });
     expect(res.statusCode).toBe(200);
     const body = res.json();
     expect(body.ok).toBe(true);
-    expect(body.to).toBe("kirill.cheldishkin2105@gmail.com");
+    expect(body.to).toBe("faruquitaymur@gmail.com");
     expect(body.mode).toBe("mock");
   });
 
@@ -123,6 +123,6 @@ describe("gtm-service HTTP", () => {
     expect(body.ok).toBe(true);
     expect(body.mode).toBe("mock");
     expect(body.draftOnly).toBe(true);
-    expect(body.to).toBe("kirill.cheldishkin2105@gmail.com");
+    expect(body.to).toBe("faruquitaymur@gmail.com");
   });
 });

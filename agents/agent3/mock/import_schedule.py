@@ -18,7 +18,7 @@ from pathlib import Path
 from .. import store
 
 CSV_PATH = Path(__file__).with_name("full_schedule.csv")
-TEST_TO_EMAIL = os.getenv("TEST_TO_EMAIL", "kirill.cheldishkin2105@gmail.com")
+TEST_TO_EMAIL = os.getenv("TEST_TO_EMAIL", "faruquitaymur@gmail.com")
 CONFERENCE = "Data Center World Power 2026"
 CONFERENCE_URL = "https://www.datacenterworld.com/"
 CONFERENCE_CITY = "Dallas, TX"

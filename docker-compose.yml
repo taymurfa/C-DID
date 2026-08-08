@@ -1,14 +1,15 @@
-# GridConnects demo stack — MongoDB Atlas only (no local Postgres/Mongo).
+# Speaker Signal demo stack — MongoDB Atlas only (no local Postgres/Mongo).
 # Requires MONGODB_URI (and optional OPENAI_API_KEY) in root .env.
 # Usage: docker compose up --build
 #
-# Web         http://localhost:3000  (landing) · /app (product)
-# Ingestion   http://localhost:8001
+# Dashboard  http://localhost:3000  (speaker-signal Signal Desk)
+# Ingestion  http://localhost:8001
 # Intelligence http://localhost:8002
-# GTM         http://localhost:8003  (Zoho SMTP via root .env SEND_MODE/SMTP_*)
+# GTM        http://localhost:8003  (Zoho SMTP via root .env SEND_MODE/SMTP_*)
 #
 # Note: `gtm` builds from ./gtm-service (Node/Fastify). Do not point this
 # service at agents/agent3 — that Python stack is separate.
+# Optional ERCOT Atlas / landing fork lives under frontend/ and is not Compose.
 
 services:
   ingestion:
@@ -89,7 +90,7 @@ services:
       SENDER_NAME: ${SENDER_NAME:-Kirill Cheldishkin}
       SENDER_COMPANY: ${SENDER_COMPANY:-Candid}
       SENDER_EMAIL: ${SENDER_EMAIL:-info@jobersteadt.com}
-      TEST_TO_EMAIL: ${TEST_TO_EMAIL:-kirill.cheldishkin2105@gmail.com}
+      TEST_TO_EMAIL: ${TEST_TO_EMAIL:-faruquitaymur@gmail.com}
       SMTP_HOST: ${SMTP_HOST:-smtp.zoho.com}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
@@ -109,11 +110,11 @@ services:
 
   dashboard:
     build:
-      context: ./frontend
+      context: ./speaker-signal
       args:
         NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-true}
-    image: gridconnects
-    container_name: gridconnects
+    image: speaker-signal-dashboard
+    container_name: speaker-signal-dashboard
     ports:
       - "3000:3000"
     env_file:

@@ -14,15 +14,15 @@ SMTP_PORT=587
 SMTP_USER=...
 SMTP_PASSWORD=...
 SMTP_FROM=info@jobersteadt.com
-TEST_TO_EMAIL=kirill.cheldishkin2105@gmail.com
+TEST_TO_EMAIL=faruquitaymur@gmail.com
 ```
 
 Send a test email:
 
 ```bash
-npx tsx scripts/send-test-email.ts kirill.cheldishkin2105@gmail.com
+npx tsx scripts/send-test-email.ts faruquitaymur@gmail.com
 # or, with the service running:
-curl -X POST http://localhost:8003/mail/test -H "content-type: application/json" -d "{\"to\":\"kirill.cheldishkin2105@gmail.com\"}"
+curl -X POST http://localhost:8003/mail/test -H "content-type: application/json" -d "{\"to\":\"faruquitaymur@gmail.com\"}"
 ```
 
 `SEND_MODE=mock` (default) logs only and does not leave the machine.
