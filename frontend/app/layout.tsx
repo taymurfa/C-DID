@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "./signal-desk.css";
 import { Toaster } from "sonner";
 import { ThemePreference } from "@/components/ThemePreference";
 import { ViewRoleProvider } from "@/lib/ViewRoleContext";
