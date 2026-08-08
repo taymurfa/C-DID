@@ -707,6 +707,47 @@ html.dark .app-shell {
   color: var(--sig-secondary);
   font-size: 11px;
 }
+.draft-modal-footer {
+  flex-wrap: wrap;
+}
+.draft-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.draft-send-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: #ff4f00;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.draft-send-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.draft-send-btn .spin {
+  animation: draft-spin 0.8s linear infinite;
+}
+.draft-send-note,
+.draft-send-error {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.draft-send-note { color: var(--sig-secondary); }
+.draft-send-error { color: #b42318; }
+@keyframes draft-spin {
+  to { transform: rotate(360deg); }
+}
 
 .page-panel { max-width: 1500px; margin: 0 auto; }
 .funnel-page { display: grid; gap: 12px; max-width: 1500px; margin: 0 auto; }

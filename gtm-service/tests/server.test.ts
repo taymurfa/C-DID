@@ -87,6 +87,9 @@ describe("gtm-service HTTP", () => {
     const body = res.json();
     expect(typeof body.smtpConfigured).toBe("boolean");
     expect(body.sendMode).toBeTruthy();
+    expect(body.draftOnly).toBe(true);
+    expect(body.canSendDemo).toBe(false);
+    expect(body.teamInbox).toBeTruthy();
   });
 
   it("POST /mail/test in mock mode", async () => {
@@ -100,5 +103,26 @@ describe("gtm-service HTTP", () => {
     expect(body.ok).toBe(true);
     expect(body.to).toBe("kirill.cheldishkin2105@gmail.com");
     expect(body.mode).toBe("mock");
+  });
+
+  it("POST /mail/send-demo routes to team inbox in mock mode", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/mail/send-demo",
+      payload: {
+        subject: "Quick note ahead of GridForward",
+        body: "Hi Maya,\n\nYour session caught my eye.\n\nBest,\nAlex\n\nReply STOP to opt out.",
+        leadName: "Maya Chen",
+        company: "HelioCare Energy",
+        conference: "GridForward Summit",
+        anchor: "T-14",
+      },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.ok).toBe(true);
+    expect(body.mode).toBe("mock");
+    expect(body.draftOnly).toBe(true);
+    expect(body.to).toBe("kirill.cheldishkin2105@gmail.com");
   });
 });

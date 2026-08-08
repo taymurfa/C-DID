@@ -164,6 +164,18 @@ a { color: inherit; }
 .draft-opt-out p { margin: 0; color: #b9bcb8; font-size: 11px; line-height: 1.45; }
 .draft-modal footer { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 10px; }
 .draft-modal footer strong { color: var(--amber); }
+.draft-modal-footer { flex-wrap: wrap; align-items: center; }
+.draft-modal-actions { display: flex; align-items: center; gap: 10px; }
+.draft-send-btn {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 12px;
+  border: 0; border-radius: 6px; background: #ff4f00; color: #fff; font: inherit; font-size: 12px; font-weight: 650; cursor: pointer;
+}
+.draft-send-btn:disabled { opacity: 0.65; cursor: wait; }
+.draft-send-btn .spin { animation: draft-spin 0.8s linear infinite; }
+.draft-send-note, .draft-send-error { margin: 10px 0 0; font-size: 12px; line-height: 1.4; }
+.draft-send-note { color: var(--muted); }
+.draft-send-error { color: #f87171; }
+@keyframes draft-spin { to { transform: rotate(360deg); } }
 .funnel-page { display: grid; gap: 11px; }
 .funnel-lead-control { padding: 14px; display: flex; align-items: center; gap: 12px; }
 .funnel-lead-control strong, .funnel-lead-control small { display: block; }

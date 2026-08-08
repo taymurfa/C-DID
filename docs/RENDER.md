@@ -32,7 +32,7 @@ In each service (or paste the same values where shared):
 | `MONGODB_URI` | all four | Atlas connection string |
 | `OPENAI_API_KEY` | all (optional) | Falls back to templates if unset |
 | `FIRECRAWL_API_KEY` | dashboard | Optional analyze preview |
-| `SEND_MODE` | gtm | `real` to send mail; `mock` to log only |
+| `SEND_MODE` | gtm | **Locked to `mock` on Render** — drafts only, no automatic sending |
 | `SMTP_USER` / `SMTP_PASSWORD` / `SMTP_FROM` / `SENDER_EMAIL` | gtm | Zoho (quote passwords that contain `#`) |
 
 Dashboard agent URLs (`INGESTION_API_URL`, `INTELLIGENCE_API_URL`, `GTM_API_URL`) and ingestion’s `INTELLIGENCE_URL` are wired automatically from each service’s `RENDER_EXTERNAL_URL`.
@@ -62,3 +62,4 @@ Exact hostnames appear on each service’s Render page (`*.onrender.com`).
 - Ingestion uses the Playwright base image — if the build OOMs on free, keep **`starter`** (as in the Blueprint).
 - Do not commit real secrets into `render.yaml`.
 - If you previously deployed `speaker-signal-*` services, syncing this Blueprint creates the new `gridconnects*` services; you can delete the old ones after cutover.
+- **Email:** Render GTM is locked to `SEND_MODE=mock` (draft only — no automatic sending). Local demo with `SEND_MODE=real` can use **Send demo to team**, which always delivers to `TEST_TO_EMAIL`, never the lead.

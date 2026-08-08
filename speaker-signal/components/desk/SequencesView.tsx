@@ -134,7 +134,9 @@ export function SequencesView() {
               <span>
                 <i /> Draft only — no automatic sending
               </span>
-              <strong>{data.sequenceSteps.length} touches</strong>
+              <strong>
+                {data.sequenceSteps.length} touches · demo send → team inbox
+              </strong>
             </footer>
           </section>
         ) : null}

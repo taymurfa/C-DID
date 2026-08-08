@@ -82,8 +82,9 @@ services:
         sync: false
       - key: OPENAI_MODEL
         value: gpt-4o-mini
+      # Locked draft-only on Render — sequences never auto-send; SMTP mock only.
       - key: SEND_MODE
-        sync: false
+        value: mock
       - key: SENDER_NAME
         value: Kirill Cheldishkin
       - key: SENDER_COMPANY
