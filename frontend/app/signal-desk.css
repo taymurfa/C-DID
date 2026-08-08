@@ -1,15 +1,15 @@
 /* Signal Desk shares the Atlas' quiet, system-material visual language. */
 .app-shell {
-  --sig-bg: #f2f2f7;
-  --sig-surface: rgba(255, 255, 255, 0.78);
-  --sig-surface-solid: #ffffff;
-  --sig-fill: #e9e9eb;
-  --sig-fill-strong: #e5e5ea;
+  --sig-bg: #f1f3f7;
+  --sig-surface: rgba(250, 251, 253, 0.8);
+  --sig-surface-solid: #fafbfd;
+  --sig-fill: #e5e8ee;
+  --sig-fill-strong: #dfe4eb;
   --sig-line: rgba(60, 60, 67, 0.16);
   --sig-line-soft: rgba(60, 60, 67, 0.1);
-  --sig-text: #000000;
-  --sig-secondary: rgba(60, 60, 67, 0.68);
-  --sig-tertiary: rgba(60, 60, 67, 0.48);
+  --sig-text: #18212c;
+  --sig-secondary: rgba(49, 61, 75, 0.72);
+  --sig-tertiary: rgba(49, 61, 75, 0.52);
   --sig-accent: #007aff;
   --sig-accent-soft: rgba(0, 122, 255, 0.11);
   --sig-positive: #178346;
@@ -466,6 +466,19 @@ html.dark .app-shell {
 .atlas-view-toggle .atlas-signal-menu button:hover, .atlas-view-toggle .atlas-signal-menu button.atlas-menu-active { background: rgba(255,255,255,.14); color: #fff; }
 .atlas-theme-toggle { position: fixed; z-index: 100; top: max(14px, env(safe-area-inset-top)); right: max(18px, env(safe-area-inset-right)); display: inline-flex; min-height: 42px; align-items: center; gap: 8px; border: 1px solid var(--sig-line); border-radius: 999px; background: var(--sig-surface); padding: 0 14px; color: var(--sig-text); box-shadow: var(--sig-shadow); backdrop-filter: blur(16px); font-size: 12px; font-weight: 650; line-height: 1; cursor: pointer; transition: background 150ms ease, border-color 150ms ease, color 150ms ease; }
 .atlas-theme-toggle:hover { background: var(--sig-surface-solid); border-color: var(--sig-secondary); }
+
+/* Shared controls use the same softened neutrals as the two product surfaces. */
+.atlas-product-shell { --atlas-chrome: rgba(30, 39, 51, .9); --atlas-chrome-line: rgba(221, 228, 238, .16); --atlas-chrome-text: rgba(232, 237, 244, .72); --atlas-chrome-active: #f3f6fa; --atlas-chrome-active-text: #1d2733; --atlas-theme-surface: rgba(250, 251, 253, .84); --atlas-theme-text: #1c2632; --atlas-theme-line: rgba(50, 63, 78, .16); }
+html.dark .atlas-product-shell { --atlas-chrome: rgba(22, 30, 40, .9); --atlas-chrome-line: rgba(220, 229, 240, .14); --atlas-chrome-text: rgba(226, 234, 243, .74); --atlas-chrome-active: #273342; --atlas-chrome-active-text: #eaf0f6; --atlas-theme-surface: rgba(29, 38, 50, .88); --atlas-theme-text: #e9eef5; --atlas-theme-line: rgba(226, 235, 245, .16); }
+.atlas-view-toggle { border-color: var(--atlas-chrome-line); background: var(--atlas-chrome); box-shadow: 0 12px 36px rgba(12, 18, 28, .22); }
+.atlas-view-toggle button, .atlas-view-toggle a { color: var(--atlas-chrome-text); }
+.atlas-view-toggle button:hover, .atlas-view-toggle a:hover { color: #eaf0f6; }
+.atlas-view-toggle button.atlas-toggle-active, .atlas-view-toggle a.atlas-toggle-active { background: var(--atlas-chrome-active); color: var(--atlas-chrome-active-text); }
+.atlas-signal-menu { border-color: var(--atlas-chrome-line); background: var(--atlas-chrome); box-shadow: 0 14px 34px rgba(12, 18, 28, .22); }
+.atlas-view-toggle .atlas-signal-menu button { color: var(--atlas-chrome-text); }
+.atlas-view-toggle .atlas-signal-menu button:hover, .atlas-view-toggle .atlas-signal-menu button.atlas-menu-active { background: rgba(202, 214, 230, .16); color: #eaf0f6; }
+.atlas-theme-toggle { border-color: var(--atlas-theme-line); background: var(--atlas-theme-surface); color: var(--atlas-theme-text); box-shadow: 0 2px 12px rgba(12, 18, 28, .12); }
+.atlas-theme-toggle:hover { background: var(--atlas-theme-surface); border-color: var(--atlas-chrome-text); }
 
 /* Project Radar overlay (Track 1) */
 .radar-map-layout { position: relative; width: 100%; min-height: 100dvh; }

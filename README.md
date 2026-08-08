@@ -21,15 +21,15 @@ The current product UI lives in [`frontend/`](frontend/). Open `/app` and use th
 flowchart LR
     Sources["Public sources<br/>conference pages · ERCOT · PUCT · TCEQ"]
 
-    Sources --> I1["Conference ingestion<br/>:8001"]
-    I1 --> I2["ICP intelligence<br/>:8002"]
-    I2 --> I3["Sequences + funnel<br/>:8003"]
+    Sources --> I1["Conference ingestion<br/>"]
+    I1 --> I2["ICP intelligence<br/>"]
+    I2 --> I3["Sequences + funnel<br/>"]
 
-    Sources --> R1["Project ingest<br/>:8011"]
-    R1 --> R2["Entity resolution<br/>:8012"]
-    R2 --> R3["Stage inference + join<br/>:8013"]
+    Sources --> R1["Project ingest<br/>"]
+    R1 --> R2["Entity resolution<br/>"]
+    R2 --> R3["Stage inference + join<br/>"]
 
-    I1 --> Web["GridConnects web<br/>:3001"]
+    I1 --> Web["GridConnects web<br/>"]
     I2 --> Web
     I3 --> Web
     R1 --> Web

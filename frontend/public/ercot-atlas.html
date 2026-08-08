@@ -16,30 +16,30 @@
   color-scheme: light;
 
   /* neutrals - Apple system grays */
-  --bg:#F2F2F7;             /* systemGray6 */
-  --surface:#FFFFFF;
-  --surface-2:#F2F2F7;
-  --fill:#E9E9EB;           /* control track */
-  --fill-2:#E5E5EA;         /* systemGray5 */
+  --bg:#F1F3F7;
+  --surface:#FAFBFD;
+  --surface-2:#F1F3F7;
+  --fill:#E5E8EE;
+  --fill-2:#DFE4EB;
   --hairline:rgba(60,60,67,0.16);
   --hairline-soft:rgba(60,60,67,0.10);
-  --ink:#000000;
-  --ink-2:rgba(60,60,67,0.62);   /* secondaryLabel */
-  --ink-3:rgba(60,60,67,0.36);   /* tertiaryLabel */
+  --ink:#18212C;
+  --ink-2:rgba(49,61,75,0.68);
+  --ink-3:rgba(49,61,75,0.42);
   --accent:#007AFF;              /* systemBlue */
-  --accent-ink:#FFFFFF;
+  --accent-ink:#F7F9FC;
   --shadow-1:0 1px 2px rgba(0,0,0,.06), 0 4px 14px rgba(0,0,0,.06);
   --shadow-2:0 2px 6px rgba(0,0,0,.08), 0 14px 40px rgba(0,0,0,.10);
-  --material:rgba(255,255,255,0.78);
+  --material:rgba(250,251,253,0.82);
 
   /* map */
-  --map-bg:#F7F7FA;
-  --map-land:#E7E7EE;
-  --map-line:rgba(255,255,255,0.95);
-  --map-ring:#E7E7EE;        /* gap colour between overlapping bubbles */
-  --map-city:rgba(60,60,67,0.34);
-  --map-city-ink:rgba(60,60,67,0.58);
-  --map-sel:#000000;
+  --map-bg:#F5F7FA;
+  --map-land:#E3E7EE;
+  --map-line:rgba(250,251,253,0.95);
+  --map-ring:#E3E7EE;
+  --map-city:rgba(49,61,75,0.38);
+  --map-city-ink:rgba(49,61,75,0.64);
+  --map-sel:#1C2632;
 
   /* categorical fuel palette - light steps */
   --c-solar:#B47C00;
@@ -58,27 +58,27 @@
 @media (prefers-color-scheme: dark){
   :root:where(:not([data-theme="light"])){
     color-scheme: dark;
-    --bg:#000000;
-    --surface:#1C1C1E;
-    --surface-2:#2C2C2E;
-    --fill:#2C2C2E;
-    --fill-2:#3A3A3C;
-    --hairline:rgba(255,255,255,0.16);
-    --hairline-soft:rgba(255,255,255,0.09);
-    --ink:#FFFFFF;
-    --ink-2:rgba(235,235,245,0.62);
-    --ink-3:rgba(235,235,245,0.34);
+    --bg:#141B24;
+    --surface:#1D2632;
+    --surface-2:#273240;
+    --fill:#273240;
+    --fill-2:#344152;
+    --hairline:rgba(226,235,245,0.16);
+    --hairline-soft:rgba(226,235,245,0.10);
+    --ink:#E9EEF5;
+    --ink-2:rgba(220,229,240,0.72);
+    --ink-3:rgba(220,229,240,0.46);
     --accent:#0A84FF;
     --shadow-1:0 1px 2px rgba(0,0,0,.5), 0 4px 16px rgba(0,0,0,.4);
     --shadow-2:0 2px 8px rgba(0,0,0,.55), 0 16px 44px rgba(0,0,0,.5);
-    --material:rgba(28,28,30,0.76);
-    --map-bg:#000000;
-    --map-land:#1C1C1E;
-    --map-line:rgba(255,255,255,0.13);
-    --map-ring:#1C1C1E;
-    --map-city:rgba(235,235,245,0.30);
-    --map-city-ink:rgba(235,235,245,0.5);
-    --map-sel:#FFFFFF;
+    --material:rgba(29,38,50,0.82);
+    --map-bg:#141B24;
+    --map-land:#1D2632;
+    --map-line:rgba(226,235,245,0.14);
+    --map-ring:#1D2632;
+    --map-city:rgba(220,229,240,0.34);
+    --map-city-ink:rgba(220,229,240,0.56);
+    --map-sel:#E9EEF5;
     --c-solar:#C78403;
     --c-wind:#1F8A52;
     --c-storage:#A855E8;
@@ -91,27 +91,27 @@
 }
 :root[data-theme="dark"]{
   color-scheme: dark;
-  --bg:#000000;
-  --surface:#1C1C1E;
-  --surface-2:#2C2C2E;
-  --fill:#2C2C2E;
-  --fill-2:#3A3A3C;
-  --hairline:rgba(255,255,255,0.16);
-  --hairline-soft:rgba(255,255,255,0.09);
-  --ink:#FFFFFF;
-  --ink-2:rgba(235,235,245,0.62);
-  --ink-3:rgba(235,235,245,0.34);
+  --bg:#141B24;
+  --surface:#1D2632;
+  --surface-2:#273240;
+  --fill:#273240;
+  --fill-2:#344152;
+  --hairline:rgba(226,235,245,0.16);
+  --hairline-soft:rgba(226,235,245,0.10);
+  --ink:#E9EEF5;
+  --ink-2:rgba(220,229,240,0.72);
+  --ink-3:rgba(220,229,240,0.46);
   --accent:#0A84FF;
   --shadow-1:0 1px 2px rgba(0,0,0,.5), 0 4px 16px rgba(0,0,0,.4);
   --shadow-2:0 2px 8px rgba(0,0,0,.55), 0 16px 44px rgba(0,0,0,.5);
-  --material:rgba(28,28,30,0.76);
-  --map-bg:#000000;
-  --map-land:#1C1C1E;
-  --map-line:rgba(255,255,255,0.13);
-  --map-ring:#1C1C1E;
-  --map-city:rgba(235,235,245,0.30);
-  --map-city-ink:rgba(235,235,245,0.5);
-  --map-sel:#FFFFFF;
+  --material:rgba(29,38,50,0.82);
+  --map-bg:#141B24;
+  --map-land:#1D2632;
+  --map-line:rgba(226,235,245,0.14);
+  --map-ring:#1D2632;
+  --map-city:rgba(220,229,240,0.34);
+  --map-city-ink:rgba(220,229,240,0.56);
+  --map-sel:#E9EEF5;
   --c-solar:#C78403;
   --c-wind:#1F8A52;
   --c-storage:#A855E8;
