@@ -1,11 +1,11 @@
-# Speaker Signal demo stack — MongoDB Atlas only (no local Postgres/Mongo).
+# GridConnects demo stack — MongoDB Atlas only (no local Postgres/Mongo).
 # Requires MONGODB_URI (and optional OPENAI_API_KEY) in root .env.
 # Usage: docker compose up --build
 #
-# Dashboard  http://localhost:3000
-# Ingestion  http://localhost:8001
+# Web         http://localhost:3000  (landing) · /app (product)
+# Ingestion   http://localhost:8001
 # Intelligence http://localhost:8002
-# GTM        http://localhost:8003  (Zoho SMTP via root .env SEND_MODE/SMTP_*)
+# GTM         http://localhost:8003  (Zoho SMTP via root .env SEND_MODE/SMTP_*)
 #
 # Note: `gtm` builds from ./gtm-service (Node/Fastify). Do not point this
 # service at agents/agent3 — that Python stack is separate.
@@ -109,11 +109,11 @@ services:
 
   dashboard:
     build:
-      context: ./speaker-signal
+      context: ./frontend
       args:
         NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-true}
-    image: speaker-signal-dashboard
-    container_name: speaker-signal-dashboard
+    image: gridconnects
+    container_name: gridconnects
     ports:
       - "3000:3000"
     env_file:

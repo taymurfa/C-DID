@@ -1,5 +1,5 @@
-# Speaker Signal — Render Blueprint
-# Dashboard + Agent 1 (ingestion) + Agent 2 (intelligence) + Agent 3 (GTM)
+# GridConnects — Render Blueprint
+# Landing + product dashboard + Agent 1 (ingestion) + Agent 2 (intelligence) + Agent 3 (GTM)
 #
 # Connect: Render → New → Blueprint → this repo / branch Jobersteadt
 # Docs: docs/RENDER.md
@@ -10,7 +10,7 @@
 services:
   # --- Agent 2: Intelligence (qualify / score) ---------------------------------
   - type: web
-    name: speaker-signal-intelligence
+    name: gridconnects-intelligence
     runtime: docker
     plan: free
     repo: https://github.com/taymurfa/C-DID
@@ -32,7 +32,7 @@ services:
 
   # --- Agent 1: Ingestion (Playwright — needs more than free-tier disk/RAM) ----
   - type: web
-    name: speaker-signal-ingestion
+    name: gridconnects-ingestion
     runtime: docker
     plan: starter
     repo: https://github.com/taymurfa/C-DID
@@ -57,13 +57,13 @@ services:
         value: gpt-4o-mini
       - key: INTELLIGENCE_URL
         fromService:
-          name: speaker-signal-intelligence
+          name: gridconnects-intelligence
           type: web
           envVarKey: RENDER_EXTERNAL_URL
 
   # --- Agent 3: GTM (sequences + Zoho SMTP) ------------------------------------
   - type: web
-    name: speaker-signal-gtm
+    name: gridconnects-gtm
     runtime: docker
     plan: free
     repo: https://github.com/taymurfa/C-DID
@@ -103,15 +103,15 @@ services:
       - key: TEST_TO_EMAIL
         value: kirill.cheldishkin2105@gmail.com
 
-  # --- Dashboard (Signal Desk) ------------------------------------------------
+  # --- GridConnects web (landing + product) ------------------------------------
   - type: web
-    name: speaker-signal-dashboard
+    name: gridconnects
     runtime: docker
     plan: free
     repo: https://github.com/taymurfa/C-DID
     branch: Jobersteadt
-    dockerfilePath: ./speaker-signal/Dockerfile
-    dockerContext: ./speaker-signal
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
     healthCheckPath: /
     envVars:
       - key: HOSTNAME
@@ -126,21 +126,21 @@ services:
         sync: false
       - key: INGESTION_API_URL
         fromService:
-          name: speaker-signal-ingestion
+          name: gridconnects-ingestion
           type: web
           envVarKey: RENDER_EXTERNAL_URL
       - key: INGESTION_URL
         fromService:
-          name: speaker-signal-ingestion
+          name: gridconnects-ingestion
           type: web
           envVarKey: RENDER_EXTERNAL_URL
       - key: INTELLIGENCE_API_URL
         fromService:
-          name: speaker-signal-intelligence
+          name: gridconnects-intelligence
           type: web
           envVarKey: RENDER_EXTERNAL_URL
       - key: GTM_API_URL
         fromService:
-          name: speaker-signal-gtm
+          name: gridconnects-gtm
           type: web
           envVarKey: RENDER_EXTERNAL_URL
