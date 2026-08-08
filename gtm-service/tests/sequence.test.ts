@@ -58,6 +58,7 @@ describe("draftSequenceEmails", () => {
     const drafts = await draftSequenceEmails(lead, conference, steps);
     expect(drafts).toHaveLength(5);
     expect(drafts.every((d) => d.generatedBy === "template")).toBe(true);
+    expect(drafts.every((d) => /reply STOP/i.test(d.body))).toBe(true);
     const withSubjects = attachDraftSubjects(steps, drafts);
     expect(withSubjects.every((s) => typeof s.subject === "string")).toBe(true);
   });

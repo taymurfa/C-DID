@@ -96,6 +96,15 @@ function conferenceDisplayName(conference: SequenceConferenceInput): string {
   return conference.name?.trim() || "the conference";
 }
 
+const OPT_OUT_LINE =
+  "If this isn't relevant, reply STOP and we won't follow up.";
+
+/** Ensure every draft body ends with an easy opt-out (spec compliance). */
+export function withOptOut(body: string): string {
+  if (/reply STOP|opt-?out|unsubscribe/i.test(body)) return body.trim();
+  return `${body.trim()}\n\n${OPT_OUT_LINE}`;
+}
+
 function templateDraft(
   lead: SequenceLeadInput,
   conference: SequenceConferenceInput,
@@ -138,7 +147,7 @@ function templateDraft(
   return {
     anchor: step.anchor,
     subject,
-    body,
+    body: withOptOut(body),
     groundedOn,
     generatedBy: "template",
   };
@@ -149,7 +158,8 @@ Return JSON: { "drafts": [ { "anchor": "T-14"|"T-7"|"T-2"|"Event"|"T+2", "subjec
 Rules:
 - Ground ONLY in the provided session, topics, evidence labels/excerpts, and conference facts.
 - Do NOT invent titles, companies, projects, numbers, or claims not in the input.
-- Keep each body under 120 words. No fake personalization.`;
+- Keep each body under 120 words. No fake personalization.
+- End every body with: "If this isn't relevant, reply STOP and we won't follow up."`;
 
 /**
  * One personalized draft per sequence step. Uses OpenAI when available; otherwise
@@ -208,7 +218,7 @@ export async function draftSequenceEmails(
       return {
         anchor: step.anchor,
         subject: ai.subject.trim(),
-        body: ai.body.trim(),
+        body: withOptOut(ai.body),
         groundedOn,
         generatedBy: "openai" as const,
       };

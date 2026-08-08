@@ -26,8 +26,7 @@ export function gtmApiUrl(): string {
   ).replace(/\/$/, "");
 }
 
+/** @deprecated Dual demo/live UI mode removed — one agent pipeline. */
 export function defaultDemoMode(): boolean {
-  const raw = process.env.NEXT_PUBLIC_DEMO_MODE;
-  if (raw === undefined || raw === "") return true;
-  return raw === "true" || raw === "1";
+  return false;
 }

@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   ChevronDown,
   CircleDot,
-  Database,
   Filter,
   Link2,
   LoaderCircle,
@@ -180,8 +179,7 @@ export function DeskShell({
               <input
                 value={data.url}
                 onChange={(event) => data.setUrl(event.target.value)}
-                placeholder="Paste a public conference agenda URL"
-                disabled={data.demoMode}
+                placeholder="Conference URL (optional — blank uses sample)"
               />
               {data.url ? (
                 <button onClick={() => data.setUrl("")} aria-label="Clear URL">
@@ -191,7 +189,7 @@ export function DeskShell({
             </label>
             <button
               className="analyze-button"
-              disabled={data.isAnalyzing || (!data.demoMode && !data.url)}
+              disabled={data.isAnalyzing}
               onClick={() => void handleAnalyze()}
             >
               {data.isAnalyzing ? (
@@ -205,24 +203,13 @@ export function DeskShell({
             </button>
             <button
               className="mode-button"
-              onClick={() => data.setDemoMode((value) => !value)}
-              aria-pressed={data.demoMode}
+              onClick={() => void data.discoverConferences()}
+              disabled={data.isAnalyzing}
+              title="Discover events via Agent 1"
             >
-              <Database size={16} />
-              {data.demoMode ? "Demo data" : "Live agents"}
-              <ChevronDown size={15} />
+              <Search size={16} />
+              Discover
             </button>
-            {!data.demoMode ? (
-              <button
-                className="mode-button"
-                onClick={() => void data.discoverConferences()}
-                disabled={data.isAnalyzing}
-                title="Discover events via Agent 1"
-              >
-                <Search size={16} />
-                Discover
-              </button>
-            ) : null}
           </header>
 
           {data.notice || data.error ? (
@@ -291,7 +278,9 @@ function SidebarHealth({
     <section className="pipeline-rail">
       <div className="pipeline-title">
         <Link href={agentRunsHref}>System health</Link>
-        <i className={`${allOk ? "" : "dot-warn"} ${isAnalyzing ? "dot-live" : ""}`} />
+        <i
+          className={`${allOk || systemHealth.status === "unknown" ? "" : "dot-warn"} ${isAnalyzing ? "dot-live" : ""}`}
+        />
       </div>
       <div className="agent-health-row" aria-label="Agent service status">
         {agents.map((agent) => {
@@ -315,7 +304,9 @@ function SidebarHealth({
           ? "Analysis in progress"
           : allOk
             ? "Agents reachable"
-            : "Some agents unreachable"}
+            : systemHealth.status === "unknown"
+              ? "Checking agents…"
+              : "Some agents unreachable"}
       </small>
       <PipelineSteps
         activeIndex={activeIndex}

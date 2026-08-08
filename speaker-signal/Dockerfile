@@ -16,7 +16,7 @@ RUN pnpm install --frozen-lockfile
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ARG NEXT_PUBLIC_DEMO_MODE=true
+ARG NEXT_PUBLIC_DEMO_MODE=false
 ENV NEXT_PUBLIC_DEMO_MODE=${NEXT_PUBLIC_DEMO_MODE}
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm run build

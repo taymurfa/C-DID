@@ -8,7 +8,8 @@ FROM node:20-bookworm-slim AS build
 WORKDIR /app
 ENV npm_config_update_notifier=false
 COPY package.json package-lock.json ./
-RUN npm ci
+# openai's optional zod peer can conflict under npm 10 strict resolution in Docker.
+RUN npm ci --legacy-peer-deps
 COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
 RUN npm run build
@@ -21,7 +22,7 @@ ENV NODE_ENV=production \
     GTM_PORT=8003 \
     HOST=0.0.0.0
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --legacy-peer-deps
 COPY --from=build /app/dist ./dist
 
 EXPOSE 8003

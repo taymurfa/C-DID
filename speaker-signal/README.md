@@ -14,7 +14,7 @@ docker compose up --build
 - Dashboard: [http://localhost:3000](http://localhost:3000)
 - Agents: `:8001` ingestion · `:8002` intelligence · `:8003` Agent 3 (`agents/agent3`)
 
-Demo mode works with no keys. Live agents need Atlas Network Access for the Docker host IP.
+One pipeline: empty URL uses the GridForward fixture; a pasted URL hits Agent 1. Both score through Agent 2 (embedded fallback if agents are down). Atlas Network Access is needed for live Mongo from Docker.
 
 ## Local Next.js only
 
@@ -25,12 +25,12 @@ pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Demo mode needs no credentials. For live mode, run the three agents (or `docker compose up`) and switch to **Live agents**.
+Open [http://localhost:3000](http://localhost:3000). Analyze with an empty URL for the sample conference, or paste a public agenda URL / use Discover for live ingest.
 
 ## What works
 
-- Run normalize → dedupe → score → rank from the Signal Desk (demo embeds Person 2; live calls Agent 2).
-- Fixture-backed Demo mode with no credentials, or Live agents: ingest → intelligence → GTM.
+- Run normalize → dedupe → score → rank from the Signal Desk (Agent 2 when reachable; embedded fallback otherwise).
+- Sample fixture or live ingest — same qualify → sequence → funnel path.
 - Ranked speakers with score components, evidence, confidence, and source links.
 - Event-anchored T−14 → T−7 → T−2 → Event → T+2 sequences (via Agent 3 when available).
 - Funnel roll-up with drop-off; status advances post funnel events to Agent 3.
@@ -42,18 +42,20 @@ No email is sent. Drafts only.
 ## Architecture
 
 ```text
-Conference URL
+Conference URL (optional)
       │
       ▼
 Next.js /api/qualify
       │
-      ├── Demo ──── embedded Person 2 + fixture
-      │
-      └── Live ──── Agent 1 /ingest → Agent 2 /qualify → desk
-                              │
-                              ▼
-                    /api/sequence → Agent 3 /sequences
-                    /api/funnel   → Agent 3 /funnel
+      ├── no URL ── GridForward fixture
+      └── URL ──── Agent 1 /ingest
+                │
+                ▼
+         Agent 2 /qualify  (embedded fallback)
+                │
+                ▼
+      /api/sequence → Agent 3 /sequences
+      /api/funnel   → Agent 3 /funnel
 ```
 
 Persistence is **MongoDB Atlas only** (not Supabase). Collection map:
@@ -70,7 +72,7 @@ Persistence is **MongoDB Atlas only** (not Supabase). Collection map:
 
 - Public data only; HTTP(S); no private-network targets.
 - No auth/CAPTCHA/paywall bypass; no automatic email sending.
-- Demo mode remains available if live sites or credentials fail during judging.
+- Empty-URL fixture path remains available if live sites or credentials fail during judging.
 
 ## Sources
 

@@ -55,7 +55,7 @@ export const SequenceStepSchema = z.object({
 
 export const AnalyzeRequestSchema = z.object({
   url: z.url(),
-  demoMode: z.boolean().default(true),
+  demoMode: z.boolean().default(false),
 });
 
 export const AnalyzeResponseSchema = z.object({
@@ -93,20 +93,17 @@ export const QualifiedLeadSchema = SpeakerSchema.extend({
   rank: z.number().int().positive(),
 });
 
-export const QualifyRequestSchema = z
-  .object({
-    // Provide EITHER a full Agent 1 ingestion payload...
-    ingestion: z.unknown().optional(),
-    // ...or a conference URL for Person 2 to fetch from Agent 1.
-    conferenceUrl: z.url().optional(),
-    agentUrl: z.url().optional(),
-    maxPages: z.number().int().positive().max(40).optional(),
-    demoMode: z.boolean().default(false),
-    minTier: z.enum(["A", "B", "C", "D"]).default("C"),
-  })
-  .refine((v) => v.ingestion || v.conferenceUrl || v.demoMode, {
-    message: "Provide `ingestion`, `conferenceUrl`, or set `demoMode`.",
-  });
+export const QualifyRequestSchema = z.object({
+  // Full Agent 1 ingestion payload, a conference URL for Agent 1, or omit both
+  // for the GridForward fixture. All paths score through the same Agent 2 pipeline.
+  ingestion: z.unknown().optional(),
+  conferenceUrl: z.url().optional(),
+  agentUrl: z.url().optional(),
+  maxPages: z.number().int().positive().max(40).optional(),
+  /** @deprecated Kept for API compat — empty body already uses the fixture. */
+  demoMode: z.boolean().default(false),
+  minTier: z.enum(["A", "B", "C", "D"]).default("C"),
+});
 
 export const QualifyResponseSchema = z.object({
   mode: z.enum(["live", "demo"]),

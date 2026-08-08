@@ -86,17 +86,15 @@ export function ConferencesView() {
           )}
           {data.isPreviewing ? "Previewing…" : "Preview crawl"}
         </button>
-        {!data.demoMode ? (
-          <button
-            type="button"
-            className="mode-button"
-            onClick={() => void data.discoverConferences()}
-            disabled={data.isAnalyzing}
-          >
-            <Search size={16} />
-            Discover events
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className="mode-button"
+          onClick={() => void data.discoverConferences()}
+          disabled={data.isAnalyzing}
+        >
+          <Search size={16} />
+          Discover events
+        </button>
         <small>
           Preview uses <code>/api/analyze</code> before full Analyze conference.
         </small>

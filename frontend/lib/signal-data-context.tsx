@@ -200,8 +200,6 @@ function applyQualifyPayload(
 export type SignalDataValue = {
   url: string;
   setUrl: (url: string) => void;
-  demoMode: boolean;
-  setDemoMode: (value: boolean | ((prev: boolean) => boolean)) => void;
   isAnalyzing: boolean;
   isPreviewing: boolean;
   pipelineIndex: number;
@@ -241,13 +239,8 @@ export type SignalDataValue = {
 const SignalDataContext = createContext<SignalDataValue | null>(null);
 
 function useSignalDataState(): SignalDataValue {
-  const [url, setUrl] = useState(DEFAULT_LIVE_URL);
-  const [demoMode, setDemoMode] = useState(() => {
-    if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_DEMO_MODE === "false") {
-      return false;
-    }
-    return true;
-  });
+  // Empty URL → GridForward fixture through the same Agent 2/3 pipeline.
+  const [url, setUrl] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [pipelineIndex, setPipelineIndex] = useState(-1);
@@ -416,20 +409,17 @@ function useSignalDataState(): SignalDataValue {
 
     async function bootstrap() {
       await refreshFunnel();
-      if (!demoMode || bootstrapped) {
-        if (!cancelled) setBootstrapped(true);
-        return;
-      }
 
       try {
         const response = await fetch("/api/qualify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ demoMode: true }),
+          body: JSON.stringify({}),
         });
         const payload = (await response.json()) as QualifyResponse & {
           error?: string;
           degraded?: boolean;
+          source?: string;
         };
         if (!response.ok || cancelled) return;
 
@@ -442,9 +432,15 @@ function useSignalDataState(): SignalDataValue {
           setSelectedConferenceId,
           setSelectedId,
         }, { postEvents: false });
+        const sourceNote =
+          payload.source === "agent2"
+            ? " Scored by Agent 2."
+            : payload.degraded
+              ? " Agent 2 unreachable — scored with embedded fallback."
+              : "";
         setNotice({
           mode: payload.mode,
-          message: `Loaded ${payload.stats.qualified} qualified speakers from the demo pipeline.`,
+          message: `Loaded ${payload.stats.qualified} qualified speakers.${sourceNote}`,
           speakersIngested: payload.stats.speakersIngested,
           qualified: payload.stats.qualified,
           degraded: payload.degraded,
@@ -461,7 +457,7 @@ function useSignalDataState(): SignalDataValue {
     return () => {
       cancelled = true;
     };
-    // Intentionally run once on mount for the initial mode.
+    // Intentionally run once on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -527,9 +523,8 @@ function useSignalDataState(): SignalDataValue {
         await delay(320);
       }
 
-      const body = demoMode
-        ? { demoMode: true }
-        : { conferenceUrl: url, demoMode: false };
+      const trimmed = url.trim();
+      const body = trimmed ? { conferenceUrl: trimmed } : {};
 
       const response = await fetch("/api/qualify", {
         method: "POST",
@@ -545,9 +540,9 @@ function useSignalDataState(): SignalDataValue {
 
       if (!payload.leads?.length) {
         throw new Error(
-          demoMode
-            ? "Demo qualification returned no leads."
-            : "No speakers extracted from that URL. Try another public agenda page.",
+          trimmed
+            ? "No speakers extracted from that URL. Try another public agenda page."
+            : "Qualification returned no leads.",
         );
       }
 
@@ -584,21 +579,31 @@ function useSignalDataState(): SignalDataValue {
       setPipelineIndex(4);
       setIsAnalyzing(false);
     }
-  }, [demoMode, url, refreshFunnel]);
+  }, [url, refreshFunnel]);
 
   const previewCrawl = useCallback(async () => {
     setError(null);
+    const trimmed = url.trim();
+    if (!trimmed) {
+      setNotice({
+        mode: "demo",
+        message: "Paste a conference URL to preview a crawl, or run Analyze with an empty URL for the sample conference.",
+        speakersIngested: stats?.speakersIngested ?? 0,
+        qualified: stats?.qualified ?? 0,
+      });
+      return;
+    }
     setIsPreviewing(true);
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, demoMode }),
+        body: JSON.stringify({ url: trimmed, demoMode: false }),
       });
       const payload = await response.json();
       if (!response.ok) {
         setNotice({
-          mode: demoMode ? "demo" : "live",
+          mode: "live",
           message: payload.error || "Preview crawl failed — you can still run Analyze conference.",
           speakersIngested: stats?.speakersIngested ?? 0,
           qualified: stats?.qualified ?? 0,
@@ -616,7 +621,7 @@ function useSignalDataState(): SignalDataValue {
       });
     } catch (caught) {
       setNotice({
-        mode: demoMode ? "demo" : "live",
+        mode: "live",
         message:
           caught instanceof Error
             ? `${caught.message} — preview unavailable; Analyze conference still works.`
@@ -628,7 +633,7 @@ function useSignalDataState(): SignalDataValue {
     } finally {
       setIsPreviewing(false);
     }
-  }, [url, demoMode, stats]);
+  }, [url, stats]);
 
   const advanceStatus = useCallback(
     (leadId: string) => {
@@ -702,7 +707,7 @@ function useSignalDataState(): SignalDataValue {
 
       if (!discovered.length) {
         setNotice({
-          mode: demoMode ? "demo" : "live",
+          mode: "live",
           message: "Discover finished — no additional events found from those seeds.",
           speakersIngested: stats?.speakersIngested ?? 0,
           qualified: stats?.qualified ?? 0,
@@ -747,7 +752,7 @@ function useSignalDataState(): SignalDataValue {
         setSelectedConferenceId(safeMapped[0].id);
       }
       setNotice({
-        mode: demoMode ? "demo" : "live",
+        mode: "live",
         message: `Discovered ${safeMapped.length} events via Agent 1.`,
         speakersIngested: stats?.speakersIngested ?? 0,
         qualified: stats?.qualified ?? 0,
@@ -755,20 +760,12 @@ function useSignalDataState(): SignalDataValue {
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Discover failed.");
     }
-  }, [url, demoMode, stats]);
+  }, [url, stats]);
 
   const dismissNotice = useCallback(() => {
     setNotice(null);
     setError(null);
     setSequenceError(null);
-  }, []);
-
-  const toggleDemoMode = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
-    setDemoMode((prev) => {
-      const next = typeof value === "function" ? value(prev) : value;
-      if (!next) setUrl((current) => current || DEFAULT_LIVE_URL);
-      return next;
-    });
   }, []);
 
   const activeDraft = useMemo(
@@ -779,8 +776,6 @@ function useSignalDataState(): SignalDataValue {
   return {
     url,
     setUrl,
-    demoMode,
-    setDemoMode: toggleDemoMode,
     isAnalyzing,
     isPreviewing,
     pipelineIndex,

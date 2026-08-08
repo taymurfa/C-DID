@@ -80,6 +80,7 @@ describe("draftSequenceEmails (template fallback)", () => {
       expect(draft.subject.length).toBeGreaterThan(0);
       expect(draft.body).toContain("Maya");
       expect(draft.body.toLowerCase()).toMatch(/behind-the-meter|power|data centers/);
+      expect(draft.body).toMatch(/reply STOP/i);
       expect(draft.groundedOn.some((g) => /Agenda|Session:|Topic:/.test(g))).toBe(true);
     }
 

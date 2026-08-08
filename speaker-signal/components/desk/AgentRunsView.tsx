@@ -14,7 +14,16 @@ export function AgentRunsView() {
 
   return (
     <section className="panel page-panel agent-runs-panel">
-      <PanelHeader title="Agent runs" action={allOk ? "Healthy" : "Degraded"} />
+      <PanelHeader
+        title="Agent runs"
+        action={
+          allOk
+            ? "Healthy"
+            : data.systemHealth.status === "unknown"
+              ? "Checking"
+              : "Degraded"
+        }
+      />
       <div className="agent-runs-grid">
         {agents.map((agent) => {
           const health = data.systemHealth.agents[agent.key];

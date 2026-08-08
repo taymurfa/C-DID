@@ -15,8 +15,8 @@ describe("POST /api/qualify", () => {
     vi.unstubAllGlobals();
   });
 
-  it("returns ranked qualified leads in demo mode", async () => {
-    const res = await POST(post({ demoMode: true }));
+  it("returns ranked qualified leads from the sample fixture", async () => {
+    const res = await POST(post({}));
     expect(res.status).toBe(200);
     const json = await res.json();
     const parsed = QualifyResponseSchema.parse(json);
@@ -25,9 +25,11 @@ describe("POST /api/qualify", () => {
     expect(parsed.stats.speakersIngested).toBe(5);
   });
 
-  it("rejects an empty request (no ingestion/url/demo)", async () => {
-    const res = await POST(post({}));
-    expect(res.status).toBe(400);
+  it("also accepts legacy demoMode: true", async () => {
+    const res = await POST(post({ demoMode: true }));
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.mode).toBe("demo");
   });
 
   it("rejects private-network conference URLs", async () => {
