@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { handOffToIntelligence } from "../handoff/qualifyClient.js";
 import { enqueueDiscovered } from "../ingest/autoIngestQueue.js";
 import { runIngestion } from "../ingest/runIngestion.js";
 import { IngestRequestSchema } from "../schemas/ingestion.js";
@@ -219,6 +220,9 @@ export async function ingestRoutes(app: FastifyInstance): Promise<void> {
       }
 
       const result = await runIngestion(parsed.data.conferenceUrl);
+
+      // Hand off to Agent 2 for lead scoring (fire-and-forget).
+      void handOffToIntelligence(result, request.log);
 
       // Event-driven trigger: conferences discovered while ingesting this one
       // are "new conferences added" - auto-enqueue the relevant ones (at depth

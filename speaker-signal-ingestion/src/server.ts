@@ -10,6 +10,7 @@ import {
   setAutoIngestLogger,
 } from "./ingest/autoIngestQueue.js";
 import { runBootstrapDiscovery } from "./ingest/bootstrap.js";
+import { isHandoffEnabled } from "./handoff/qualifyClient.js";
 import { autoIngestRoutes } from "./routes/autoIngest.js";
 import { discoverRoutes } from "./routes/discover.js";
 import { healthRoutes } from "./routes/health.js";
@@ -78,6 +79,9 @@ async function start() {
       mongo: isMongoConfigured() ? "configured" : "disabled (no persistence)",
       autoIngest: isAutoIngestEnabled()
         ? "enabled (auto-ingest newly discovered conferences)"
+        : "disabled",
+      handoff: isHandoffEnabled()
+        ? `enabled (-> ${env.handoff.intelligenceUrl}/qualify)`
         : "disabled",
     },
     "ingestion service configuration",

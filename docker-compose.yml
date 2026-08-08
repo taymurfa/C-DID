@@ -43,6 +43,70 @@ services:
       postgres:
         condition: service_healthy
 
+  # --- Agent 1: conference ingestion (crawl -> structured public data) --------
+  ingestion:
+    build:
+      context: ./speaker-signal-ingestion
+    image: speaker-signal-ingestion
+    container_name: speaker-signal-ingestion
+    ports:
+      - "8001:8001"
+    # Single source of truth for OPENAI_API_KEY / MONGODB_URI etc.
+    env_file:
+      - ./backend/.env
+    environment:
+      INGESTION_PORT: "8001"
+      HOST: "0.0.0.0"
+      # Start grabbing on boot, then auto-ingest every relevant discovery.
+      BOOTSTRAP_SEEDS: "https://www.7x24exchange.org/,https://www.datacenterworld.com/,https://infrastructuremasons.org/events/"
+      BOOTSTRAP_MAX_PER_SEED: "10"
+      AUTO_INGEST_ENABLED: "true"
+      # Grab several conferences at once instead of strictly one at a time.
+      AUTO_INGEST_CONCURRENCY: "3"
+      # Hand each finished run to Agent 2 for scoring (Compose network name).
+      HANDOFF_ENABLED: "true"
+      INTELLIGENCE_URL: "http://intelligence:8002"
+    depends_on:
+      - intelligence
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "fetch('http://localhost:8001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # --- Agent 2: sales-intelligence (raw data -> scored, ranked leads) ---------
+  intelligence:
+    build:
+      context: ./intelligence-service
+    image: intelligence-service
+    container_name: intelligence-service
+    ports:
+      - "8002:8002"
+    env_file:
+      - ./backend/.env
+    environment:
+      INTELLIGENCE_PORT: "8002"
+      HOST: "0.0.0.0"
+      # Reach Agent 1 over the Compose network (service name, not localhost).
+      INGESTION_URL: "http://ingestion:8001"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "fetch('http://localhost:8002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
   postgres:
     image: postgres:16
     ports:

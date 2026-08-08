@@ -9,3 +9,6 @@ process.env.CRAWL_RETRY_BASE_MS = process.env.CRAWL_RETRY_BASE_MS ?? "1";
 // Auto-ingestion fires background runs on discovery; disable it by default so
 // route/agent tests stay hermetic. The auto-ingest test opts back in explicitly.
 process.env.AUTO_INGEST_ENABLED = process.env.AUTO_INGEST_ENABLED ?? "false";
+// The Agent 2 hand-off makes a network call; disable by default in tests. The
+// hand-off test opts back in explicitly with a mocked fetch.
+process.env.HANDOFF_ENABLED = process.env.HANDOFF_ENABLED ?? "false";

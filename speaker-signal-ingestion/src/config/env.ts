@@ -109,6 +109,15 @@ export const env = {
     seeds: readCsv("BOOTSTRAP_SEEDS", []),
     maxPerSeed: readInt("BOOTSTRAP_MAX_PER_SEED", 10),
   },
+
+  // Hand-off: after each completed run, POST the result to Agent 2's /qualify
+  // so scraped conferences are scored into ranked leads end-to-end.
+  handoff: {
+    enabled: readBool("HANDOFF_ENABLED", true),
+    intelligenceUrl:
+      process.env.INTELLIGENCE_URL?.trim() || "http://localhost:8002",
+    timeoutMs: readInt("HANDOFF_TIMEOUT_MS", 120000),
+  },
 } as const;
 
 export type AppEnv = typeof env;

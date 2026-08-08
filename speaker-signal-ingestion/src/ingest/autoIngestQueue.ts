@@ -2,6 +2,7 @@ import pLimit from "p-limit";
 import { env } from "../config/env.js";
 import { normalizeUrl } from "../crawler/normalizeUrl.js";
 import { getPreviousRun } from "../db/mongo.js";
+import { handOffToIntelligence } from "../handoff/qualifyClient.js";
 import type { DiscoveredEvent } from "../schemas/event.js";
 import { runIngestion } from "./runIngestion.js";
 
@@ -125,6 +126,9 @@ async function processItem(item: QueueItem): Promise<void> {
       },
       "auto-ingest: run complete",
     );
+
+    // Hand off to Agent 2 for scoring (fire-and-forget; never blocks the queue).
+    void handOffToIntelligence(result, log);
 
     // Chain: relevant events discovered by this run become new triggers, until
     // the depth budget is exhausted.
