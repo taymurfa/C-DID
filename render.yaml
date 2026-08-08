@@ -13,6 +13,7 @@ services:
     name: speaker-signal-intelligence
     runtime: docker
     plan: free
+    repo: https://github.com/taymurfa/C-DID
     branch: Jobersteadt
     dockerfilePath: ./intelligence-service/Dockerfile
     dockerContext: ./intelligence-service
@@ -34,6 +35,7 @@ services:
     name: speaker-signal-ingestion
     runtime: docker
     plan: starter
+    repo: https://github.com/taymurfa/C-DID
     branch: Jobersteadt
     dockerfilePath: ./speaker-signal-ingestion/Dockerfile
     dockerContext: ./speaker-signal-ingestion
@@ -64,6 +66,7 @@ services:
     name: speaker-signal-gtm
     runtime: docker
     plan: free
+    repo: https://github.com/taymurfa/C-DID
     branch: Jobersteadt
     dockerfilePath: ./gtm-service/Dockerfile
     dockerContext: ./gtm-service
@@ -105,6 +108,7 @@ services:
     name: speaker-signal-dashboard
     runtime: docker
     plan: free
+    repo: https://github.com/taymurfa/C-DID
     branch: Jobersteadt
     dockerfilePath: ./speaker-signal/Dockerfile
     dockerContext: ./speaker-signal
