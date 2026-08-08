@@ -1,12 +1,33 @@
-import { resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { config as loadDotenv } from "dotenv";
 
-// Load the shared backend/.env so this service reuses the system's
-// OPENAI_API_KEY / MONGODB_URI. npm scripts run from the service directory, so
-// the backend folder is at ../backend. Override with ENV_FILE if needed.
-const sharedEnvPath =
-  process.env.ENV_FILE ?? resolve(process.cwd(), "..", "backend", ".env");
-loadDotenv({ path: sharedEnvPath });
+/**
+ * Resolve the single source of truth for configuration: the shared
+ * `backend/.env`. We deliberately never read a service-local `.env` - the
+ * backend file is the only one that should provide OPENAI_API_KEY / MONGODB_URI.
+ *
+ * We walk up from this module's own location (not the current working
+ * directory) so the path holds no matter where the process is launched from or
+ * whether we're running source (tsx) or built output (dist). `ENV_FILE` still
+ * wins if explicitly set.
+ */
+function resolveBackendEnv(): string {
+  if (process.env.ENV_FILE) return process.env.ENV_FILE;
+  let dir = dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 8; i++) {
+    const candidate = resolve(dir, "backend", ".env");
+    if (existsSync(candidate)) return candidate;
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  // Last-resort fallback to the original cwd-relative convention.
+  return resolve(process.cwd(), "..", "backend", ".env");
+}
+
+loadDotenv({ path: resolveBackendEnv() });
 
 function readInt(name: string, fallback: number): number {
   const raw = process.env[name];
