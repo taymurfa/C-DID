@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/qualify/route";
 import { QualifyResponseSchema } from "@/lib/contracts";
 
@@ -11,6 +11,10 @@ function post(body: unknown): Request {
 }
 
 describe("POST /api/qualify", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("returns ranked qualified leads in demo mode", async () => {
     const res = await POST(post({ demoMode: true }));
     expect(res.status).toBe(200);
@@ -62,5 +66,44 @@ describe("POST /api/qualify", () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.leads[0].name).toBe("Dana Fields");
+  });
+
+  it("sends Agent 1 the documented ingestion request contract", async () => {
+    const ingestion = {
+      runId: "agent-1-run",
+      conference: {
+        name: "Grid Delivery Summit",
+        websiteUrl: "https://conference.example/agenda",
+        startDate: null,
+        endDate: null,
+        location: null,
+      },
+      sessions: [],
+      speakers: [],
+    };
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(ingestion), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await POST(
+      post({
+        conferenceUrl: "https://conference.example/agenda",
+        agentUrl: "http://localhost:8001",
+        maxPages: 6,
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][0]).toBe("http://localhost:8001/ingest");
+    expect(JSON.parse(fetchMock.mock.calls[0][1]?.body as string)).toEqual({
+      conferenceUrl: "https://conference.example/agenda",
+      maxPages: 6,
+      discoverEvents: true,
+    });
   });
 });

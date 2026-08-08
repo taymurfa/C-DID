@@ -29,7 +29,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { AnalyzeResponse, Speaker } from "@/lib/contracts";
+import type { QualifyResponse, Speaker } from "@/lib/contracts";
 import { conferences, funnel, sequenceSteps, speakers as seedSpeakers } from "@/lib/demo-data";
 
 type NavItem = { label: string; icon: LucideIcon; target: string };
@@ -66,11 +66,11 @@ export function SignalDesk() {
   const [selectedId, setSelectedId] = useState(seedSpeakers[0].id);
   const [showAll, setShowAll] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
-  const [url, setUrl] = useState("https://conference-example.com/agenda");
+  const [url, setUrl] = useState("");
   const [demoMode, setDemoMode] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [pipelineIndex, setPipelineIndex] = useState(-1);
-  const [result, setResult] = useState<AnalyzeResponse | null>(null);
+  const [result, setResult] = useState<QualifyResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [speakerRows, setSpeakerRows] = useState<Speaker[]>(seedSpeakers);
 
@@ -98,20 +98,17 @@ export function SignalDesk() {
         await delay(320);
       }
 
-      const response = await fetch("/api/analyze", {
+      const response = await fetch("/api/qualify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, demoMode }),
+        body: JSON.stringify(demoMode ? { demoMode: true } : { conferenceUrl: url }),
       });
-      const payload = (await response.json()) as AnalyzeResponse & { error?: string };
+      const payload = (await response.json()) as QualifyResponse & { error?: string };
       if (!response.ok) throw new Error(payload.error || "Analysis failed.");
 
       setResult(payload);
-      setSelectedId(payload.speaker.id);
-      setSpeakerRows((rows) => {
-        const withoutDuplicate = rows.filter((speaker) => speaker.id !== payload.speaker.id);
-        return [payload.speaker, ...withoutDuplicate];
-      });
+      setSpeakerRows(payload.leads);
+      if (payload.leads[0]) setSelectedId(payload.leads[0].id);
       document.getElementById("speakers")?.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Analysis failed.");
@@ -161,13 +158,13 @@ export function SignalDesk() {
             <input value={url} onChange={(event) => setUrl(event.target.value)} placeholder="Paste a public conference agenda URL" />
             {url ? <button onClick={() => setUrl("")} aria-label="Clear URL"><X size={16} /></button> : null}
           </label>
-          <button className="analyze-button" disabled={isAnalyzing || !url} onClick={analyzeConference}>
+          <button className="analyze-button" disabled={isAnalyzing || (!demoMode && !url)} onClick={analyzeConference}>
             {isAnalyzing ? <LoaderCircle className="spin" size={17} /> : <Play size={17} fill="currentColor" />}
             {isAnalyzing ? pipeline[Math.min(pipelineIndex, 3)]?.label || "Analyzing" : "Analyze conference"}
           </button>
           <button className="mode-button" onClick={() => setDemoMode((value) => !value)} aria-pressed={demoMode}>
             <Database size={16} />
-            {demoMode ? "Demo data" : "Live Firecrawl"}
+            {demoMode ? "Demo mode" : "Live agents"}
             <ChevronDown size={15} />
           </button>
         </header>
@@ -175,37 +172,43 @@ export function SignalDesk() {
         {result || error ? (
           <div className={`analysis-notice ${error ? "notice-error" : ""}`} role="status">
             {error ? <CircleDot size={16} /> : <CheckCircle2 size={16} />}
-            <span>{error || result?.message}</span>
-            {result && <small>{result.mode.toUpperCase()} · {result.pagesProcessed} page · {result.entitiesExtracted} signals</small>}
+            <span>{error || `${result?.stats.qualified ?? 0} qualified speakers ranked for ${result?.conference.name || "this conference"}.`}</span>
+            {result && <small>{result.mode.toUpperCase()} · {result.stats.speakersIngested} ingested · {result.stats.companiesFound} companies</small>}
             <button onClick={() => { setResult(null); setError(null); }} aria-label="Dismiss"><X size={15} /></button>
           </div>
         ) : null}
 
         <section className="metric-strip" aria-label="Key metrics">
           <Metric icon={CalendarDays} label="Upcoming conferences" value="4" note="Next: GridForward Summit" />
-          <Metric icon={UsersRound} label="Qualified speakers" value="25" note="↑ 6 vs last 7 days" positive />
+          <Metric
+            icon={UsersRound}
+            label="Qualified speakers"
+            value={String(result?.stats.qualified ?? 25)}
+            note={result ? `${result.stats.afterDedupe} unique after dedupe` : "↑ 6 vs last 7 days"}
+            positive
+          />
           <Metric icon={Send} label="Active sequences" value="18" note="3 paused" />
           <Metric icon={Target} label="Meetings booked" value="6" note="↑ 2 vs last 7 days" positive />
         </section>
 
         <div className="primary-grid">
           <section className="panel speakers-panel" id="speakers">
-            <PanelHeader title="High-signal speakers" action="View all speakers" onAction={() => setShowAll((value) => !value)} />
+            <PanelHeader title="High-signal speakers" action={showAll ? "Show top 3" : "View all speakers"} onAction={() => setShowAll((value) => !value)} />
             <div className="speaker-head" aria-hidden="true">
               <span>#</span><span>Speaker</span><span>Role / company</span><span>Score</span><span>Conference / session</span><span>Outreach</span>
             </div>
             <div className="speaker-list">
-              {visibleSpeakers.map((speaker, index) => (
+              {visibleSpeakers.length ? visibleSpeakers.map((speaker, index) => (
                 <SpeakerRow key={speaker.id} speaker={speaker} rank={index + 1} selected={speaker.id === selectedId} onSelect={() => setSelectedId(speaker.id)} />
-              ))}
+              )) : <p className="speaker-empty">No ICP-fit speakers cleared the current threshold.</p>}
             </div>
             <footer className="panel-footer">
-              <button onClick={() => setShowAll((value) => !value)}>{showAll ? "Show top 3" : "View all 25 speakers"}<ChevronRight size={15} /></button>
-              <span>{showAll ? speakerRows.length : Math.min(3, speakerRows.length)} shown · 25 qualified</span>
+              <button onClick={() => setShowAll((value) => !value)}>{showAll ? "Show top 3" : `View all ${speakerRows.length} speakers`}<ChevronRight size={15} /></button>
+              <span>{showAll ? speakerRows.length : Math.min(3, speakerRows.length)} shown · {result?.stats.qualified ?? 25} qualified</span>
             </footer>
           </section>
 
-          <SequencePanel speaker={selected} />
+          {selected ? <SequencePanel speaker={selected} /> : <EmptySequencePanel />}
         </div>
 
         <div className="secondary-grid">
@@ -253,7 +256,7 @@ function PanelHeader({ title, action, onAction }: { title: string; action: strin
   return (
     <header className="panel-heading">
       <h2>{title}</h2>
-      <button onClick={onAction}>{action}<ChevronRight size={15} /></button>
+      {onAction ? <button onClick={onAction}>{action}<ChevronRight size={15} /></button> : <span>{action}</span>}
     </header>
   );
 }
@@ -278,8 +281,8 @@ function SpeakerRow({ speaker, rank, selected, onSelect }: { speaker: Speaker; r
           </div>
           <div>
             <span className="mini-label">Provenance</span>
-            {speaker.evidence.map((evidence) => (
-              <a key={`${speaker.id}-${evidence.sourceUrl}`} href={evidence.sourceUrl} target="_blank" rel="noreferrer">
+            {speaker.evidence.map((evidence, index) => (
+              <a key={`${speaker.id}-${evidence.sourceUrl}-${evidence.label}-${index}`} href={evidence.sourceUrl} target="_blank" rel="noreferrer">
                 {evidence.label}<ExternalLink size={11} />
               </a>
             ))}
@@ -305,7 +308,7 @@ function ScoreBar({ label, value, max }: { label: string; value: number; max: nu
 function SequencePanel({ speaker }: { speaker: Speaker }) {
   return (
     <section className="panel sequence-panel" id="sequence">
-      <PanelHeader title="Event-anchored sequence" action="View all sequences" />
+      <PanelHeader title="Event-anchored sequence" action="5 touchpoints" />
       <div className="sequence-person">
         <span className="avatar avatar-1">{initials(speaker.name)}</span>
         <div><strong>{speaker.name}</strong><small>{speaker.company} · {speaker.conference}</small></div>
@@ -330,10 +333,23 @@ function SequencePanel({ speaker }: { speaker: Speaker }) {
   );
 }
 
+function EmptySequencePanel() {
+  return (
+    <section className="panel sequence-panel" id="sequence">
+      <PanelHeader title="Event-anchored sequence" action="Awaiting signal" />
+      <div className="empty-panel">
+        <Target size={24} />
+        <strong>No qualified speaker selected</strong>
+        <span>Try a broader tier threshold or analyze another agenda.</span>
+      </div>
+    </section>
+  );
+}
+
 function EventsPanel() {
   return (
     <section className="panel events-panel" id="events">
-      <PanelHeader title="Upcoming events" action="View all conferences" />
+      <PanelHeader title="Upcoming events" action={`${conferences.length} tracked`} />
       <div className="event-rail">
         {conferences.map((conference, index) => (
           <article key={conference.id} className={index === 0 ? "event-selected" : ""}>
@@ -356,7 +372,7 @@ function EventsPanel() {
 function FunnelPanel() {
   return (
     <section className="panel funnel-panel" id="funnel">
-      <PanelHeader title="Pipeline funnel" action="View funnel" />
+      <PanelHeader title="Pipeline funnel" action={`${funnel.length} stages`} />
       <div className="funnel-meta"><span>Last 30 days</span><span><i /> Updated 2m ago</span></div>
       <div className="funnel-chart">
         {funnel.map((stage, index) => {
