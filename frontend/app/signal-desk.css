@@ -395,6 +395,10 @@ html.dark .app-shell {
 .event-card > button:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 .connections-toolbar { display: flex; min-height: 62px; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; padding: 10px 14px; }
+.contact-view-toggle { display: inline-flex; flex: none; gap: 2px; border-radius: 9px; background: var(--sig-fill); padding: 3px; }
+.contact-view-toggle button { display: inline-flex; width: 104px; min-height: 34px; align-items: center; justify-content: center; border: 0; border-radius: 7px; background: transparent; padding: 0 12px; color: var(--sig-secondary); font-size: 12px; font-weight: 650; cursor: pointer; transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease; }
+.contact-view-toggle button:hover { color: var(--sig-text); }
+.contact-view-toggle button.contact-view-active { background: var(--sig-surface-solid); color: var(--sig-text); box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
 .connection-search { display: flex; width: min(470px, 100%); height: 40px; align-items: center; gap: 8px; border-radius: 9px; background: var(--sig-fill); padding: 0 10px; color: var(--sig-tertiary); }
 .connection-search:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--sig-accent) 18%, transparent); }
 .connection-search input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: var(--sig-text); font-size: 13px; }
@@ -1798,12 +1802,30 @@ html.dark .speaker-drawer {
   border-top: 1px solid var(--sig-line-soft);
   padding: 11px 12px 12px;
 }
-.sequence-empty {
+.drawer-sequence .sequence-empty {
   margin: 0;
   border-top: 1px solid var(--sig-line-soft);
   padding: 10px 12px 12px;
   color: var(--sig-secondary);
   font-size: 11px;
+}
+
+/* Agent is a dense operational workspace: keep empty sequence states concise so the
+   funnel and scan controls remain visible without a long scroll. */
+.agent-page > .sequences-empty-grid {
+  max-width: 100%;
+  min-height: 292px;
+}
+.agent-page > .sequences-empty-grid > .panel {
+  min-height: 292px;
+}
+.agent-page > .funnel-page {
+  max-width: none;
+}
+@media (max-width: 1180px) {
+  .agent-page > .sequences-empty-grid > .panel {
+    min-height: 272px;
+  }
 }
 @media (max-width: 620px) {
   .drawer-backdrop { align-items: flex-end; padding: 0; }
