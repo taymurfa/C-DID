@@ -25,7 +25,11 @@ async function fetchFromAgent1(
   const response = await fetch(`${agentBase.replace(/\/$/, "")}/ingest`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url: conferenceUrl, maxPages: maxPages ?? 8 }),
+    body: JSON.stringify({
+      conferenceUrl,
+      maxPages: maxPages ?? 8,
+      discoverEvents: true,
+    }),
     signal: AbortSignal.timeout(120_000),
   });
   const payload = await response.json();

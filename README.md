@@ -1,6 +1,10 @@
 # Candid Intelligence — Speaker Signal
 
-The active D-Branch hackathon build lives in [`speaker-signal/`](speaker-signal/). It turns public energy-conference agendas into provenance-backed, explainably scored speakers and event-anchored outreach drafts.
+Speaker Signal is the Track 2 hackathon submission on the `Jobersteadt` branch. It turns public energy-conference agendas into a deduplicated, explainably ranked list of ICP-fit speakers, then makes the event-anchored outreach motion and funnel visible in one desk.
+
+## Judge quick start
+
+The full product demo runs without credentials:
 
 ```bash
 cd speaker-signal
@@ -8,13 +12,40 @@ pnpm install
 pnpm dev
 ```
 
-Open `http://localhost:3000`. The app works without credentials in Demo data mode. Set `FIRECRAWL_API_KEY` and switch to **Live Firecrawl** to retrieve a public conference page through Firecrawl v2.
+Open `http://localhost:3000` and click **Analyze conference**. Demo mode runs the real normalization, deduplication, scoring, ranking, evidence, and sequence UI against a stable energy-conference fixture.
 
-See the [Speaker Signal README](speaker-signal/README.md) for architecture, scoring, compliance, database setup, and next steps.
+For a live public conference URL, start Agent 1 in a second terminal, then switch the dashboard to **Live agents**:
+
+```bash
+cd speaker-signal-ingestion
+npm ci
+npm run dev
+```
+
+Agent 1 listens on `http://localhost:8001`. It respects robots.txt, stays within configured crawl budgets, and degrades to deterministic extraction when OpenAI is not configured. Copy the relevant `.env.example` files only when live OpenAI or MongoDB persistence is needed.
+
+## What is built
+
+| Surface | Location | Role |
+| --- | --- | --- |
+| Signal Desk | [`speaker-signal/`](speaker-signal/) | Next.js dashboard, embedded qualification pipeline, outreach cadence, funnel, and demo fallback |
+| Agent 1 | [`speaker-signal-ingestion/`](speaker-signal-ingestion/) | Public-page discovery, bounded crawling, extraction, freshness, auto-ingest, and evidence |
+| Agent 2 | [`intelligence-service/`](intelligence-service/) | Standalone normalization, entity resolution, ICP scoring, ranking, explanations, and persistence |
+
+The primary flow is `conference URL → Agent 1 ingestion → normalized/deduplicated speakers → explainable ICP ranking → event-anchored sequence → funnel`. The dashboard never sends email automatically; every outreach step remains a reviewable draft.
+
+## Demo path
+
+1. Click **Analyze conference** in Demo mode.
+2. Confirm five ingested records resolve to four unique people and three qualified leads.
+3. Select a ranked speaker to inspect evidence, score components, and the T−14 → T−7 → T−2 → Event → T+2 cadence.
+4. Review the conference calendar and funnel leak from identified to conversation booked.
+
+Detailed architecture, API contracts, configuration, tests, sources, compliance decisions, and next-week work are documented in each package README. The source brief is the [Candid AI Agent Development Guide](https://chatgpt.com/share/6a7761b3-0fd4-83ea-9bca-15dd870c3dff); live retrieval can also use the existing Firecrawl v2 preview endpoint in `speaker-signal/app/api/analyze`.
 
 ---
 
-## Legacy Hackathon Template (OKRs)
+## Legacy Hackathon Template (not part of the submission)
 
 A full-stack OKR application featuring Next.js frontend, Flask backend, Auth0 authentication, hierarchical OKRs (org → department → team → user), role-based access control, AWS-ready Postgres persistence, and automated Gmail reminders.
 

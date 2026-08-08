@@ -23,6 +23,7 @@ frontend/.env.local
 out/
 build/
 dist/
+*.tsbuildinfo
 
 # IDE
 .vscode/

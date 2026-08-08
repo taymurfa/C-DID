@@ -4,8 +4,8 @@ Speaker Signal turns public energy-conference agendas into explainable, qualifie
 
 ## What works
 
-- Paste a public conference URL into the Signal Desk and run a typed analysis pipeline.
-- Use fixture-backed Demo data with no credentials or switch to live Firecrawl scraping.
+- Run the real normalize → dedupe → score → rank pipeline from the Signal Desk.
+- Use fixture-backed Demo mode with no credentials or switch to live Agent 1 ingestion.
 - Explore ranked speakers with deterministic score components, evidence, confidence, and source links.
 - Select a speaker to update the T−14 → T−7 → T−2 → Event → T+2 outreach sequence.
 - Inspect conference coverage, qualified-speaker counts, conversion, and funnel drop-off.
@@ -25,7 +25,7 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-The app starts in Demo data mode. For live public-page retrieval, copy `.env.example` to `.env.local`, set `FIRECRAWL_API_KEY`, restart the app, and switch the top-right control to **Live Firecrawl**.
+The app starts in Demo mode; no URL or credential is required. For live public-page retrieval, start `../speaker-signal-ingestion` on port 8001, copy `.env.example` to `.env.local` if `INGESTION_URL` needs an override, and switch the top-right control to **Live agents**.
 
 ```bash
 pnpm lint
@@ -38,14 +38,14 @@ pnpm build
 Conference URL
       │
       ▼
-Next.js /api/analyze ─── URL safety gate
+Next.js /api/qualify ─── URL safety gate
       │
-      ├── Demo mode ───── persisted fixture contract
+      ├── Demo mode ───── stable ingestion fixture
       │
-      └── Live mode ───── Firecrawl v2 scrape (public page only)
+      └── Live mode ───── Agent 1 bounded public-page ingestion
                               │
                               ▼
-                    typed evidence boundary
+                    typed ingestion boundary
                               │
              ┌────────────────┼────────────────┐
              ▼                ▼                ▼
@@ -56,7 +56,7 @@ Next.js /api/analyze ─── URL safety gate
                          Signal Desk
 ```
 
-The frontend uses the D-Branch project's Next.js 16, React 19, TypeScript, and Lucide foundation. `lib/contracts.ts` is the shared Zod boundary. `lib/firecrawl.ts` owns public page retrieval. `app/api/analyze/route.ts` validates URLs and prevents localhost/private-network targets before invoking Firecrawl. `supabase/schema.sql` defines provenance, normalized entities, sequences, funnel events, and agent-run persistence.
+The frontend uses the D-Branch project's Next.js 16, React 19, TypeScript, and Lucide foundation. `lib/contracts.ts` is the shared Zod boundary. `app/api/qualify/route.ts` connects the dashboard to Agent 1 and the embedded Person 2 pipeline; it validates conference URLs before ingestion. The original `app/api/analyze/route.ts` remains available as a bounded Firecrawl v2 page-preview endpoint. `supabase/schema.sql` defines provenance, normalized entities, sequences, funnel events, and agent-run persistence.
 
 ## Person 2 — qualification pipeline (`/api/qualify`)
 
