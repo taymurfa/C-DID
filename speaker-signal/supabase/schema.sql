@@ -9,6 +9,7 @@ create extension if not exists pgcrypto;
 
 create type public.analysis_status as enum ('queued', 'running', 'completed', 'failed');
 create type public.outreach_status as enum ('draft', 'scheduled', 'sent', 'replied', 'paused');
+create type public.project_stage as enum ('Concept', 'FEL-1', 'FEL-2 / pre-FEED', 'FEED', 'Interconnection', 'FID', 'Construction', 'COD');
 
 create table public.conferences (
   id uuid primary key default gen_random_uuid(),
@@ -93,6 +94,82 @@ create table public.speakers (
   unique (normalized_name, company_id)
 );
 
+create table public.project_sources (
+  id uuid primary key default gen_random_uuid(),
+  source_type text not null,
+  source_name text not null,
+  url text not null unique,
+  content_hash text,
+  last_fetched_at timestamptz,
+  next_fetch_at timestamptz,
+  scrape_status analysis_status not null default 'queued',
+  raw_markdown text,
+  error_message text,
+  created_at timestamptz not null default now()
+);
+
+create table public.projects (
+  id uuid primary key default gen_random_uuid(),
+  canonical_name text not null,
+  normalized_name text not null,
+  company_id uuid references public.companies(id) on delete set null,
+  project_type text,
+  capacity_mw numeric,
+  county text,
+  state text,
+  latitude numeric,
+  longitude numeric,
+  inferred_stage project_stage not null default 'Concept',
+  stage_confidence numeric(4,3) not null check (stage_confidence between 0 and 1),
+  signal_score smallint not null check (signal_score between 0 and 100),
+  latest_signal text,
+  first_seen_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.project_aliases (
+  project_id uuid references public.projects(id) on delete cascade,
+  alias text not null,
+  normalized_alias text not null,
+  source_url text not null,
+  primary key (project_id, normalized_alias)
+);
+
+create table public.project_evidence (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  source_id uuid references public.project_sources(id) on delete set null,
+  evidence_type text not null,
+  title text not null,
+  excerpt text not null,
+  source_url text not null,
+  observed_at timestamptz not null,
+  confidence numeric(4,3) not null check (confidence between 0 and 1),
+  created_at timestamptz not null default now()
+);
+
+create table public.project_stage_history (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  stage project_stage not null,
+  confidence numeric(4,3) not null check (confidence between 0 and 1),
+  reason text not null,
+  evidence_ids uuid[] not null default '{}',
+  inferred_at timestamptz not null default now()
+);
+
+create table public.person_project_signals (
+  project_id uuid references public.projects(id) on delete cascade,
+  speaker_id uuid references public.speakers(id) on delete cascade,
+  conference_id uuid references public.conferences(id) on delete cascade,
+  priority_score smallint not null check (priority_score between 0 and 100),
+  reason text not null,
+  created_at timestamptz not null default now(),
+  primary key (project_id, speaker_id, conference_id)
+);
+
 create table public.session_speakers (
   session_id uuid references public.sessions(id) on delete cascade,
   speaker_id uuid references public.speakers(id) on delete cascade,
@@ -158,6 +235,11 @@ create index speakers_score_idx on public.speakers(overall_score desc);
 create index evidence_speaker_idx on public.speaker_evidence(speaker_id);
 create index sequence_schedule_idx on public.outreach_steps(scheduled_for, status);
 create index funnel_stage_idx on public.funnel_events(stage, occurred_at desc);
+create index projects_signal_score_idx on public.projects(signal_score desc);
+create index projects_stage_idx on public.projects(inferred_stage, stage_confidence desc);
+create index project_evidence_project_idx on public.project_evidence(project_id, observed_at desc);
+create index project_stage_history_idx on public.project_stage_history(project_id, inferred_at desc);
+create index person_project_priority_idx on public.person_project_signals(priority_score desc);
 
 alter table public.conferences enable row level security;
 alter table public.conference_sources enable row level security;
@@ -170,6 +252,12 @@ alter table public.outreach_sequences enable row level security;
 alter table public.outreach_steps enable row level security;
 alter table public.funnel_events enable row level security;
 alter table public.agent_runs enable row level security;
+alter table public.project_sources enable row level security;
+alter table public.projects enable row level security;
+alter table public.project_aliases enable row level security;
+alter table public.project_evidence enable row level security;
+alter table public.project_stage_history enable row level security;
+alter table public.person_project_signals enable row level security;
 
 -- Create workspace-scoped policies before exposing these tables to authenticated clients.
 -- Until then, use the service role only from trusted server routes.

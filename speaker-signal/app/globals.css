@@ -1,3 +1,5 @@
+@import "./project-radar.css";
+
 :root {
   --bg: #090b0b;
   --panel: #111414;
@@ -33,7 +35,7 @@ a { color: inherit; }
 .brand-mark span:nth-child(1), .brand-mark span:nth-child(5) { height: 10px; }
 .brand-mark span:nth-child(2), .brand-mark span:nth-child(4) { height: 20px; }
 .brand-mark span:nth-child(3) { height: 30px; }
-.brand strong { display: block; font: 700 24px/1 var(--display); letter-spacing: -0.7px; white-space: nowrap; }
+.brand strong { display: block; font: 700 20px/1 var(--display); letter-spacing: -0.5px; white-space: nowrap; }
 .brand small { display: block; margin-top: 7px; color: #c7c8c4; font-size: 8px; letter-spacing: 1.4px; text-transform: uppercase; }
 .mobile-close { display: none; }
 .sidebar nav { padding: 10px 0; }

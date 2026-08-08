@@ -15,6 +15,7 @@ import {
   LoaderCircle,
   Menu,
   Play,
+  Radar,
   Search,
   Send,
   UserRound,
@@ -43,11 +44,13 @@ const NAV: NavItem[] = [
   { label: "Sequences", icon: Send, path: "/sequences" },
   { label: "Funnel", icon: Filter, path: "/funnel" },
   { label: "Agent Runs", icon: Bot, path: "/agent-runs" },
+  { label: "Project Radar", icon: Radar, path: "/projects" },
 ];
 
 type DeskUiValue = {
   basePath: string;
   openSpeaker: (id: string) => void;
+  openNavigation: () => void;
   closeDrawer: () => void;
 };
 
@@ -82,6 +85,7 @@ export function DeskShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const activePath = normalizePath(pathname, basePath);
+  const isProjectRoute = activePath === "/projects";
 
   const setSelectedId = data.setSelectedId;
   const openSpeaker = useCallback(
@@ -93,10 +97,11 @@ export function DeskShell({
   );
 
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+  const openNavigation = useCallback(() => setMobileNav(true), []);
 
   const uiValue = useMemo(
-    () => ({ basePath, openSpeaker, closeDrawer }),
-    [basePath, openSpeaker, closeDrawer],
+    () => ({ basePath, openSpeaker, openNavigation, closeDrawer }),
+    [basePath, openSpeaker, openNavigation, closeDrawer],
   );
 
   async function handleAnalyze() {
@@ -117,8 +122,8 @@ export function DeskShell({
               <span />
             </div>
             <div>
-              <strong>Speaker Signal</strong>
-              <small>by Candid Intelligence</small>
+              <strong>Candid Intelligence</strong>
+              <small>Origination Desk</small>
             </div>
             <button
               className="mobile-close"
@@ -163,8 +168,8 @@ export function DeskShell({
           </div>
         </aside>
 
-        <section className="workspace">
-          <header className="command-bar">
+        <section className={`workspace ${isProjectRoute ? "project-workspace-shell" : ""}`}>
+          {!isProjectRoute ? <header className="command-bar">
             <button
               className="menu-button"
               onClick={() => setMobileNav(true)}
@@ -210,9 +215,9 @@ export function DeskShell({
               <Search size={16} />
               Discover
             </button>
-          </header>
+          </header> : null}
 
-          {data.notice || data.error ? (
+          {!isProjectRoute && (data.notice || data.error) ? (
             <div
               className={`analysis-notice ${data.error ? "notice-error" : ""}`}
               role="status"

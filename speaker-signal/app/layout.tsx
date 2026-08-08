@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Speaker Signal | Candid Intelligence",
-  description: "Conference intelligence, qualified speakers, and event-anchored outreach in one signal desk.",
+  title: "Origination Desk | Candid Intelligence",
+  description: "Project intelligence, qualified speakers, and event-anchored outreach in one origination desk.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
