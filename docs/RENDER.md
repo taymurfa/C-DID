@@ -6,7 +6,7 @@ Creates four Docker web services on branch **`Jobersteadt`**:
 
 | Service | Package | Plan |
 | --- | --- | --- |
-| `gridconnects` | `frontend/` (landing + product) | free |
+| `gridconnects` | `speaker-signal/` (Signal Desk) | free |
 | `gridconnects-ingestion` | `speaker-signal-ingestion/` | **starter** (Playwright image) |
 | `gridconnects-intelligence` | `intelligence-service/` | free |
 | `gridconnects-gtm` | `gtm-service/` | free |
