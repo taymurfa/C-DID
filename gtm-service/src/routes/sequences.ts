@@ -20,15 +20,27 @@ import {
 
 function sequencePayload(record: SequenceRecord) {
   return {
-    id: record.id,
-    leadId: record.leadId,
-    lead: record.lead,
-    conference: record.conference,
-    steps: record.steps,
-    drafts: record.drafts,
-    createdAt: record.createdAt,
-    updatedAt: record.updatedAt,
+    id: String(record.id ?? ""),
+    leadId: String(record.leadId ?? ""),
+    lead: record.lead ?? null,
+    conference: record.conference ?? null,
+    steps: Array.isArray(record.steps) ? record.steps : [],
+    drafts: Array.isArray(record.drafts) ? record.drafts : [],
+    createdAt: String(record.createdAt ?? ""),
+    updatedAt: String(record.updatedAt ?? ""),
   };
+}
+
+function isUsableSequence(
+  payload: ReturnType<typeof sequencePayload>,
+): boolean {
+  return Boolean(
+    payload.leadId &&
+      payload.lead &&
+      typeof payload.lead === "object" &&
+      typeof (payload.lead as { name?: unknown }).name === "string" &&
+      (payload.lead as { name: string }).name.trim(),
+  );
 }
 
 export async function sequenceRoutes(app: FastifyInstance): Promise<void> {
@@ -115,7 +127,7 @@ export async function sequenceRoutes(app: FastifyInstance): Promise<void> {
     async (_request, reply) => {
       const sequences = await listSequences();
       return reply.status(200).send({
-        sequences: sequences.map(sequencePayload),
+        sequences: sequences.map(sequencePayload).filter(isUsableSequence),
       });
     },
   );

@@ -63,3 +63,27 @@ export async function saveQualification(
     .catch(() => undefined);
   return true;
 }
+
+/**
+ * Most recent qualification run for desk bootstrap. Returns null when Mongo is
+ * off or the collection is empty.
+ */
+export async function getLatestQualification(): Promise<
+  (QualificationResult & { createdAt?: Date; updatedAt?: Date }) | null
+> {
+  const collection = qualificationsCollection();
+  if (!collection) return null;
+
+  const doc = await collection
+    .find({})
+    .sort({ updatedAt: -1, createdAt: -1 })
+    .limit(1)
+    .next()
+    .catch(() => null);
+
+  if (!doc) return null;
+  const { _id: _ignored, ...rest } = doc as Record<string, unknown> & {
+    _id?: unknown;
+  };
+  return rest as QualificationResult & { createdAt?: Date; updatedAt?: Date };
+}

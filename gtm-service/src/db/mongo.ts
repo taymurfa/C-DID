@@ -93,10 +93,34 @@ async function normalizeSequenceDoc(
   }
   // Dashboard-shaped docs already carry steps/drafts/lead.
   if (Array.isArray(doc.steps) && doc.leadId) {
+    const lead =
+      doc.lead && typeof doc.lead === "object"
+        ? (doc.lead as SequenceRecord["lead"])
+        : null;
+    if (!lead || typeof lead.name !== "string" || !lead.name.trim()) {
+      return null;
+    }
+    const conference =
+      doc.conference && typeof doc.conference === "object"
+        ? (doc.conference as SequenceRecord["conference"])
+        : {
+            name: null,
+            startDate: new Date().toISOString(),
+            endDate: null,
+            location: null,
+            websiteUrl: undefined,
+          };
     return {
-      ...(doc as unknown as SequenceRecord),
       id: String(doc.id ?? doc._id ?? ""),
       leadId: String(doc.leadId),
+      lead: { ...lead, id: String(lead.id || doc.leadId) },
+      conference,
+      steps: doc.steps as SequenceRecord["steps"],
+      drafts: Array.isArray(doc.drafts)
+        ? (doc.drafts as SequenceRecord["drafts"])
+        : [],
+      createdAt: String(doc.createdAt ?? doc.created_at ?? new Date().toISOString()),
+      updatedAt: String(doc.updatedAt ?? doc.updated_at ?? new Date().toISOString()),
     };
   }
   return null;
@@ -119,7 +143,23 @@ export async function listSequences(): Promise<SequenceRecord[]> {
   const hydrated: SequenceRecord[] = [];
   for (const raw of docs) {
     const record = await normalizeSequenceDoc(raw as Record<string, unknown>);
-    if (record?.leadId && record.steps?.length) hydrated.push(record);
+    // Include Agent 3 / dashboard sequences even when emails/steps are empty so
+    // the desk can still hydrate speaker rows from `lead`.
+    if (record?.leadId && record.lead?.name) {
+      if (!record.steps?.length) {
+        record.steps = [
+          {
+            id: `${record.leadId}-placeholder`,
+            anchor: "T-14",
+            label: "T-14",
+            scheduledFor: record.conference.startDate,
+            subject: null,
+            status: "Planned",
+          },
+        ];
+      }
+      hydrated.push(record);
+    }
   }
   return hydrated.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }

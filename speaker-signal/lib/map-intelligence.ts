@@ -172,3 +172,32 @@ export function mapIntelligenceToQualifyResponse(
     leads,
   };
 }
+
+/**
+ * Map a persisted Agent 2 qualification run (no live ingestion payload) into
+ * the desk QualifyResponse shape for bootstrap / refresh.
+ */
+export function mapStoredQualificationToQualifyResponse(
+  agent2: unknown,
+  mode: "live" | "demo" = "live",
+): QualifyResponse {
+  const raw = (agent2 ?? {}) as Agent2Result;
+  const firstUrl =
+    raw.leads?.flatMap((lead) => lead.sourceUrls ?? []).find(Boolean) ??
+    "https://example.com/conference";
+
+  const syntheticIngestion: IngestionResult = {
+    runId: raw.sourceRunId ?? raw.qualificationId ?? "stored",
+    conference: {
+      name: raw.conferenceName ?? null,
+      websiteUrl: firstUrl,
+      startDate: null,
+      endDate: null,
+      location: null,
+    },
+    sessions: [],
+    speakers: [],
+  };
+
+  return mapIntelligenceToQualifyResponse(raw, syntheticIngestion, mode);
+}
